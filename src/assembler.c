@@ -1,7 +1,23 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #define LINE 256
+
+void parseToken(char* buffer, int line)
+{
+	printf("%d: token %s\n", line, buffer);
+	char temp_code[10];
+	char temp_operand[15];
+
+	for (int i = 0; i <= strlen(buffer); i++)
+	{
+		printf("\t%d -> %c\n", i, buffer[i]);
+	}
+
+	return;
+}
+
 
 void parseLine(char* buffer, int line)
 {
@@ -18,8 +34,6 @@ void parseLine(char* buffer, int line)
 	// maybe change to a struct
 	// later
 	char temp_label[50];
-	char temp_code[10];
-	char temp_operand[15];
 
 	// CHECKING IF WE HAVE LABEL
 	const char* delim_one = ",";
@@ -35,12 +49,28 @@ void parseLine(char* buffer, int line)
 		token_count++;
 	}
 
-	strcpy(temp_token, token);
+//	strcpy(temp_token, token);
 
 	// CHECKING IF WE HAVE COMMENTS
 	const char* delim_two = "/";
 	char* token_code = strtok(token,delim_two);
-	printf("token %s %d\n", token_code);
+	int j = 0;
+	// SANITIZE THE STRING;
+	for (int i = 0; i < strlen(token_code); i++)
+	{
+		if (!isspace(token_code[i]))
+		{
+			temp_token[j] = token_code[i];
+			j++;
+		}
+		//if (!isspace(token_code[i]))
+		//{
+		//	parseToken(token_code, line);
+		//	break;
+		//}
+	}
+	temp_token[j] = '\0';
+	printf("%d: token %s\n", line, temp_token);
 	return;
 }
 
@@ -68,7 +98,7 @@ int main(int argc, char* argv[])
 	
 	while (fgets(buffer, len, fptr))
 	{
-		printf("%d %s",line,buffer);
+//		printf("%d %s",line,buffer);
 		parseLine(buffer, line);
 		line++;
 	}
