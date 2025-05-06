@@ -4,6 +4,17 @@
 
 #define LINE 256
 
+struct t_label 
+{
+	char name[10];
+	int listing;
+};
+
+// EXPERIMENT: labelarray[0] is
+// used to track the total count
+// of labels in the array;
+static struct t_label labelarray[50];
+
 void parseToken(char* buffer, int line)
 {
 	printf("%d: token %s\n", line, buffer);
@@ -38,7 +49,7 @@ void parseLine(char* buffer, int line)
 	// CHECKING IF WE HAVE LABEL
 	const char* delim_one = ",";
 	char* token = strtok(buffer, delim_one);
-	short token_count = 0;
+	short label_present = 0;
 	// LABEL PRESENT
 	if (strcmp(temp_buffer, token) != 0)
 	{
@@ -46,10 +57,14 @@ void parseLine(char* buffer, int line)
 		memcpy(temp_label,token,len);
 		temp_label[len] = '\0';
 		token = strtok(NULL, delim_one);
-		token_count++;
-	}
+		label_present = 1;
 
-//	strcpy(temp_token, token);
+		int count = labelarray[0].listing;
+		printf("count %d\n", count);
+		memcpy(&labelarray[count].name,temp_label, len);
+		labelarray[count].name[len] = '\0';
+		labelarray[0].listing += 1;
+	}
 
 	// CHECKING IF WE HAVE COMMENTS
 	const char* delim_two = "/";
@@ -63,14 +78,21 @@ void parseLine(char* buffer, int line)
 			temp_token[j] = token_code[i];
 			j++;
 		}
-		//if (!isspace(token_code[i]))
-		//{
-		//	parseToken(token_code, line);
-		//	break;
-		//}
 	}
 	temp_token[j] = '\0';
-	printf("%d: token %s\n", line, temp_token);
+	if (j > 0)
+	{
+		if (label_present == 1)
+		{
+			printf("%d: label: %s token: %s\n", 
+				line, temp_label, temp_token);
+		}
+		else
+		{
+			printf("%d: token: %s\n", 
+				line, temp_token);
+		}
+	}
 	return;
 }
 
@@ -83,7 +105,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-
 	FILE* fptr = fopen(argv[1], "rb");
 	if (!fptr)
 	{
@@ -94,14 +115,24 @@ int main(int argc, char* argv[])
 	const unsigned int len = LINE;
 	char buffer[len];
 	
+	labelarray[0].listing = 1;
+
 	int line = 1;
-	
 	while (fgets(buffer, len, fptr))
 	{
 //		printf("%d %s",line,buffer);
 		parseLine(buffer, line);
 		line++;
 	}
+
+
+	int labelcount = labelarray[0].listing;
+	for (int i = 1; i <= labelcount; i++)
+	{
+		struct t_label temp_label = labelarray[i];
+		printf("label array %d %s\n", temp_label.listing, temp_label.name);
+	}
+
 
 	fclose(fptr);
 }
