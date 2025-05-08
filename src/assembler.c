@@ -2,6 +2,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "instructions.h"
+
 #define LINE 256
 
 struct t_label 
@@ -15,15 +17,39 @@ struct t_label
 // of labels in the array;
 static struct t_label labelarray[50];
 
-void parseToken(char* buffer, int line)
+void parseInstruction(char* buffer, int line)
 {
-	printf("%d: token %s\n", line, buffer);
-	char temp_code[10];
+//	printf("%d: token %s\n", line, buffer);
+	char temp_code[5];
 	char temp_operand[15];
-
-	for (int i = 0; i <= strlen(buffer); i++)
+	int buffersize = strlen(buffer);
+	int code_cpy_size = 3;
+	// CODE OPERAND
+	// CODE contains three letter; 
+	// **LD is two letters
+	
+	if ((buffer[0] == 'L') && 
+		(buffer[1] == 'D') && 
+		(buffer[2] != 'M'))
 	{
-		printf("\t%d -> %c\n", i, buffer[i]);
+		code_cpy_size = 2;
+	}
+
+	memcpy(temp_code, buffer, code_cpy_size);
+	temp_code[code_cpy_size] = '\0';
+
+	if (buffersize > 3)
+	{
+		memcpy(temp_operand, buffer + code_cpy_size, buffersize + 1);
+		temp_operand[buffersize + 1] = '\0';
+	}
+	
+	for (int i = 0; i < INS_SIZE; i++)
+	{
+		if (strcmp(temp_code, instructions[i]) == 0)
+		{
+			printf("%s == %s\n", temp_code, instructions[i]);
+		}
 	}
 
 	return;
@@ -60,7 +86,6 @@ void parseLine(char* buffer, int line)
 		label_present = 1;
 
 		int count = labelarray[0].listing;
-		printf("count %d\n", count);
 		memcpy(&labelarray[count].name,temp_label, len);
 		labelarray[count].name[len] = '\0';
 		labelarray[0].listing += 1;
@@ -92,6 +117,7 @@ void parseLine(char* buffer, int line)
 			printf("%d: token: %s\n", 
 				line, temp_token);
 		}
+		parseInstruction(temp_token, line);
 	}
 	return;
 }
@@ -125,9 +151,8 @@ int main(int argc, char* argv[])
 		line++;
 	}
 
-
 	int labelcount = labelarray[0].listing;
-	for (int i = 1; i <= labelcount; i++)
+	for (int i = 1; i < labelcount; i++)
 	{
 		struct t_label temp_label = labelarray[i];
 		printf("label array %d %s\n", temp_label.listing, temp_label.name);
