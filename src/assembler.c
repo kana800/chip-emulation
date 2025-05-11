@@ -44,13 +44,19 @@ void parseInstruction(char* buffer, int line)
 		temp_operand[buffersize + 1] = '\0';
 	}
 	
+	// THIS IS NOT EFFICIENT; I WILL USE
+	// HASHMAPS LATER
+	int ins = -1;
 	for (int i = 0; i < INS_SIZE; i++)
 	{
 		if (strcmp(temp_code, instructions[i]) == 0)
 		{
-			printf("%s == %s\n", temp_code, instructions[i]);
+			ins = i;
+			break;
 		}
 	}
+	printf("%s == %s\n", temp_code, instructions[ins]);
+	printf("%d", instructions_hex[0]);
 
 	return;
 }
