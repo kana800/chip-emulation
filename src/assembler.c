@@ -4,6 +4,8 @@
 
 #include "instructions.h"
 
+#include <stdlib.h>
+
 #define LINE 256
 
 struct t_label 
@@ -16,6 +18,21 @@ struct t_label
 // used to track the total count
 // of labels in the array;
 static struct t_label labelarray[50];
+
+void handleInstructionError(char* buffer, int line, int errcode)
+{
+	switch (errcode)
+	{
+		case 0: // REGISTER OUT OF BOUNDS
+			fprintf(stderr, 
+				"REGISTER OUT OF BOUNDS @%d:%s\n", line, buffer);
+			break;
+		case 1: // REGISTER PAIRS OUT OF BOUNDS
+			fprintf(stderr, 
+				"REGISTER PAIRS OUT OF BOUNDS @%d:%s\n", line, buffer);
+			break;
+	}
+}
 
 void parseInstruction(char* buffer, int line)
 {
@@ -42,10 +59,11 @@ void parseInstruction(char* buffer, int line)
 	{
 		memcpy(temp_operand, buffer + code_cpy_size, buffersize + 1);
 		temp_operand[buffersize + 1] = '\0';
+
 	}
 	
-	// THIS IS NOT EFFICIENT; I WILL USE
-	// HASHMAPS LATER
+	// THIS IS NOT EFFICIENT; 
+	// I WILL USE HASHMAPS LATER
 	int ins = -1;
 	for (int i = 0; i < INS_SIZE; i++)
 	{
@@ -55,8 +73,91 @@ void parseInstruction(char* buffer, int line)
 			break;
 		}
 	}
-	printf("%s == %s\n", temp_code, instructions[ins]);
-	printf("%d", instructions_hex[0]);
+
+//	printf("\tline: %d parsed OPCODE %s %s %x %d\n",
+//		line, temp_code, instructions[ins], 
+//		instructions_hex[ins], instructions_hex[ins]);
+//
+//	printf("\tline: %d parsed OPERAND %s\n",
+//		line, temp_operand);
+
+	uint8_t opa = instructions_hex[ins];
+	uint8_t opr = 0x00;
+	uint8_t hins;
+
+	switch (ins)
+	{
+		case 0: // "ADD" OPR -> 1000 OPA -> RRRR | LABEL, OP, REG
+		case 2: // "BBL"
+		case 13:  // "INC"  
+		case 20:  // "LDM"  
+		case 21:  // "LD"   
+		case 34:  // "SUB"  
+		case 45:  // "XCH"
+			opr = atoi(temp_operand);
+			if ((opr < 0) || (opr > 15))
+			{
+				handleInstructionError(buffer, line, 0);
+				break;
+			}
+			hins = opa | opr; 
+			printf("%X ", hins); 
+			break;
+		case 1: // "ADM"
+		case 3: // "CLB"  
+		case 4: // "CLC"  
+		case 5: // "CMC"  
+		case 6: // "CMA"  
+		case 7: // "DAA"  
+		case 8: // "DAC"  
+		case 9: // "DCL"  
+		case 12:  // "IAC"  
+		case 19:  // "KBP"  
+		case 23:  // "RAL"  
+		case 24:  // "RAR"  
+		case 25:  // "RD0"  
+		case 26:  // "RD1"  
+		case 27:  // "RD2"  
+		case 28:  // "RD3"  
+		case 29:  // "RDM"  
+		case 30:  // "RDR"  
+		case 31:  // "SBM"  
+		case 33:  // "STC"  
+		case 35:  // "TCC"  
+		case 36:  // "TCS"  
+		case 37:  // "WR0"  
+		case 38:  // "WR1"  
+		case 39:  // "WR2"  
+		case 40:  // "WR3"  
+		case 41:  // "WMP"  
+		case 42:  // "WPM"  
+		case 43:  // "WRM"  
+		case 44:  // "WRR"  
+			printf("%X ", instructions_hex[ins]);
+			break;
+		case 11:  // "FIN"  
+		case 16:  // "JIN"  
+		case 32:  // "SRC"  
+			opr = atoi(temp_operand);
+			if ((opr < 0) || (opr > 7))
+			{
+				handleInstructionError(buffer, line, 1);
+				break;
+			}
+			hins = opa | opr << 1;
+			printf("%X ", hins);
+			break;
+		case 10:  // "FIM"  
+		case 14:  // "ISZ"  
+		case 15:  // "JCN"  
+		case 17:  // "JMS"  
+		case 18:  // "JUN"  
+		case 22:  // "NOP"  
+			printf("\nline: %d parsed OPCODE %s %s %x %d\n",
+				line, temp_code, instructions[ins], 
+				instructions_hex[ins], instructions_hex[ins]);
+			break;
+	}
 
 	return;
 }
@@ -115,13 +216,13 @@ void parseLine(char* buffer, int line)
 	{
 		if (label_present == 1)
 		{
-			printf("%d: label: %s token: %s\n", 
-				line, temp_label, temp_token);
+//			printf("%d: label: %s token: %s\n", 
+//				line, temp_label, temp_token);
 		}
 		else
 		{
-			printf("%d: token: %s\n", 
-				line, temp_token);
+//			printf("%d: token: %s\n", 
+//				line, temp_token);
 		}
 		parseInstruction(temp_token, line);
 	}
@@ -161,7 +262,7 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < labelcount; i++)
 	{
 		struct t_label temp_label = labelarray[i];
-		printf("label array %d %s\n", temp_label.listing, temp_label.name);
+//		printf("label array %d %s\n", temp_label.listing, temp_label.name);
 	}
 
 

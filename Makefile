@@ -10,5 +10,7 @@ main: $(SRCDIR)/main.c $(SRCDIR)/memory.h
 assembler: $(SRCDIR)/assembler.c
 	$(CC) $^ -g -o $(BUILDDIR)/$@.out
 
-run_test_1: assembler 
-	$(BUILDDIR)/$^.out $(TESTDIR)/test_1.asm
+test_assembler: assembler
+	rm -r $(BUILDDIR)/test_arth.obj
+	$(BUILDDIR)/$^.out $(TESTDIR)/test_arth.asm >> $(BUILDDIR)/test_arth.obj
+	diff -y $(TESTDIR)/test_arth.obj $(BUILDDIR)/test_arth.obj 
