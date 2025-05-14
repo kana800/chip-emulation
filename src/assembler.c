@@ -14,12 +14,21 @@ struct t_label
 	int listing;
 };
 
+struct t_labelhelper
+{
+	char label[50];
+};
+
+
 // EXPERIMENT: labelarray[0] is
 // used to track the total count
 // of labels in the array;
 static struct t_label labelarray[50];
+// EXPERIMENT: listing[0] is used to 
+// track the listing number
+static uint8_t listingarray[LINE];
 
-void handleInstructionError(char* buffer, int line, int errcode)
+static void handleInstructionError(char* buffer, int line, int errcode)
 {
 	switch (errcode)
 	{
@@ -34,7 +43,7 @@ void handleInstructionError(char* buffer, int line, int errcode)
 	}
 }
 
-void parseInstruction(char* buffer, int line)
+static void parseInstruction(char* buffer, int line)
 {
 //	printf("%d: token %s\n", line, buffer);
 	char temp_code[5];
@@ -84,7 +93,8 @@ void parseInstruction(char* buffer, int line)
 	uint8_t opa = instructions_hex[ins];
 	uint8_t opr = 0x00;
 	uint8_t hins;
-
+	uint8_t count = listingarray[0];
+	
 	switch (ins)
 	{
 		case 0: // "ADD" OPR -> 1000 OPA -> RRRR | LABEL, OP, REG
@@ -101,7 +111,9 @@ void parseInstruction(char* buffer, int line)
 				break;
 			}
 			hins = opa | opr; 
-			printf("%X ", hins); 
+//			printf("%X ", hins); 
+			listingarray[count] = hins;
+			listingarray[0] = count + 1;
 			break;
 		case 1: // "ADM"
 		case 3: // "CLB"  
@@ -133,7 +145,9 @@ void parseInstruction(char* buffer, int line)
 		case 42:  // "WPM"  
 		case 43:  // "WRM"  
 		case 44:  // "WRR"  
-			printf("%X ", instructions_hex[ins]);
+//			printf("%X ", instructions_hex[ins]);
+			listingarray[count] = instructions_hex[ins];
+			listingarray[0] = count + 1;
 			break;
 		case 11:  // "FIN"  
 		case 16:  // "JIN"  
@@ -145,7 +159,9 @@ void parseInstruction(char* buffer, int line)
 				break;
 			}
 			hins = opa | opr << 1;
-			printf("%X ", hins);
+//			printf("%X ", hins);
+			listingarray[count] = hins;
+			listingarray[0] = count + 1;
 			break;
 		case 10:  // "FIM"  
 		case 14:  // "ISZ"  
@@ -153,9 +169,15 @@ void parseInstruction(char* buffer, int line)
 		case 17:  // "JMS"  
 		case 18:  // "JUN"  
 		case 22:  // "NOP"  
-			printf("\nline: %d parsed OPCODE %s %s %x %d\n",
+			printf("\nline: %d parsed OPCODE '%s' %s %x %d\n",
 				line, temp_code, instructions[ins], 
 				instructions_hex[ins], instructions_hex[ins]);
+			opr = atoi(temp_operand);
+			hins = opa | opr;
+//			printf("%X ", hins);
+			listingarray[count] = hins;
+			listingarray[count + 1] = 0x00;
+			listingarray[0] = count + 2;
 			break;
 	}
 
@@ -163,7 +185,7 @@ void parseInstruction(char* buffer, int line)
 }
 
 
-void parseLine(char* buffer, int line)
+static void parseLine(char* buffer, int line)
 {
 	// NOTE: ALL instruction has four 
 	// separate distinct part or fields: 
@@ -195,6 +217,7 @@ void parseLine(char* buffer, int line)
 		int count = labelarray[0].listing;
 		memcpy(&labelarray[count].name,temp_label, len);
 		labelarray[count].name[len] = '\0';
+		labelarray[count].listing = line;
 		labelarray[0].listing += 1;
 	}
 
@@ -249,6 +272,8 @@ int main(int argc, char* argv[])
 	char buffer[len];
 	
 	labelarray[0].listing = 1;
+	listingarray[0] = 1;
+
 
 	int line = 1;
 	while (fgets(buffer, len, fptr))
@@ -258,12 +283,20 @@ int main(int argc, char* argv[])
 		line++;
 	}
 
-	int labelcount = labelarray[0].listing;
-	for (int i = 1; i < labelcount; i++)
-	{
-		struct t_label temp_label = labelarray[i];
+	printf("\n");
+//	int labelcount = labelarray[0].listing;
+//	for (int i = 1; i < labelcount; i++)
+//	{
+//		struct t_label temp_label = labelarray[i];
 //		printf("label array %d %s\n", temp_label.listing, temp_label.name);
+//	}
+	
+	uint8_t listingcount = listingarray[0];
+	for (int i = 1; i < listingcount; i++)
+	{
+		printf("listing %d: %x\n", i, listingarray[i]);
 	}
+
 
 
 	fclose(fptr);
