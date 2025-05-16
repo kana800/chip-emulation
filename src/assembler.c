@@ -14,9 +14,17 @@ struct t_label
 	int listing;
 };
 
-struct t_labelhelper
+struct t_infoblock
 {
-	char label[50];
+	char line[50];
+	uint8_t isdata:1;
+//	union {
+//		uint8_t hex;
+//		uint16_t hex; // includes data
+//	};
+	uint8_t hex;
+	uint8_t data;
+	char s_data[10];
 };
 
 
@@ -24,9 +32,9 @@ struct t_labelhelper
 // used to track the total count
 // of labels in the array;
 static struct t_label labelarray[50];
-// EXPERIMENT: listing[0] is used to 
-// track the listing number
-static uint8_t listingarray[LINE];
+
+static struct t_infoblock listingarray[LINE];
+static uint8_t lacount;
 
 static void handleInstructionError(char* buffer, int line, int errcode)
 {
@@ -43,17 +51,16 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 	}
 }
 
-static void parseInstruction(char* buffer, int line)
+static uint8_t parseInstruction(char* buffer, int line)
 {
-//	printf("%d: token %s\n", line, buffer);
 	char temp_code[5];
 	char temp_operand[15];
 	int buffersize = strlen(buffer);
 	int code_cpy_size = 3;
+
 	// CODE OPERAND
 	// CODE contains three letter; 
 	// **LD is two letters
-	
 	if ((buffer[0] == 'L') && 
 		(buffer[1] == 'D') && 
 		(buffer[2] != 'M'))
@@ -64,13 +71,6 @@ static void parseInstruction(char* buffer, int line)
 	memcpy(temp_code, buffer, code_cpy_size);
 	temp_code[code_cpy_size] = '\0';
 
-	if (buffersize > 3)
-	{
-		memcpy(temp_operand, buffer + code_cpy_size, buffersize + 1);
-		temp_operand[buffersize + 1] = '\0';
-
-	}
-	
 	// THIS IS NOT EFFICIENT; 
 	// I WILL USE HASHMAPS LATER
 	int ins = -1;
@@ -83,17 +83,15 @@ static void parseInstruction(char* buffer, int line)
 		}
 	}
 
-//	printf("\tline: %d parsed OPCODE %s %s %x %d\n",
-//		line, temp_code, instructions[ins], 
-//		instructions_hex[ins], instructions_hex[ins]);
-//
-//	printf("\tline: %d parsed OPERAND %s\n",
-//		line, temp_operand);
-
+	if (buffersize > 3)
+	{
+		memcpy(temp_operand, buffer + code_cpy_size, buffersize + 1);
+		temp_operand[buffersize + 1] = '\0';
+	}
+	
 	uint8_t opa = instructions_hex[ins];
 	uint8_t opr = 0x00;
 	uint8_t hins;
-	uint8_t count = listingarray[0];
 	
 	switch (ins)
 	{
@@ -111,9 +109,8 @@ static void parseInstruction(char* buffer, int line)
 				break;
 			}
 			hins = opa | opr; 
-//			printf("%X ", hins); 
-			listingarray[count] = hins;
-			listingarray[0] = count + 1;
+			listingarray[lacount].hex = hins;
+			lacount += 1;
 			break;
 		case 1: // "ADM"
 		case 3: // "CLB"  
@@ -145,9 +142,8 @@ static void parseInstruction(char* buffer, int line)
 		case 42:  // "WPM"  
 		case 43:  // "WRM"  
 		case 44:  // "WRR"  
-//			printf("%X ", instructions_hex[ins]);
-			listingarray[count] = instructions_hex[ins];
-			listingarray[0] = count + 1;
+			listingarray[lacount].hex = opa;
+			lacount += 1;
 			break;
 		case 11:  // "FIN"  
 		case 16:  // "JIN"  
@@ -159,9 +155,8 @@ static void parseInstruction(char* buffer, int line)
 				break;
 			}
 			hins = opa | opr << 1;
-//			printf("%X ", hins);
-			listingarray[count] = hins;
-			listingarray[0] = count + 1;
+			listingarray[lacount].hex = hins;
+			lacount += 1;
 			break;
 		case 10:  // "FIM"  
 		case 14:  // "ISZ"  
@@ -169,19 +164,18 @@ static void parseInstruction(char* buffer, int line)
 		case 17:  // "JMS"  
 		case 18:  // "JUN"  
 		case 22:  // "NOP"  
-			printf("\nline: %d parsed OPCODE '%s' %s %x %d\n",
-				line, temp_code, instructions[ins], 
+			printf("\nline: %d parsed OPCODE '%s' %s %s %x %d\n",
+				line, temp_code, temp_operand, instructions[ins], 
 				instructions_hex[ins], instructions_hex[ins]);
 			opr = atoi(temp_operand);
 			hins = opa | opr;
-//			printf("%X ", hins);
-			listingarray[count] = hins;
-			listingarray[count + 1] = 0x00;
-			listingarray[0] = count + 2;
+			listingarray[lacount].isdata = 1;
+			listingarray[lacount].hex = hins;
+			listingarray[lacount].data = 0xFF;
+			lacount += 1;
 			break;
 	}
-
-	return;
+	return 0;
 }
 
 
@@ -225,16 +219,34 @@ static void parseLine(char* buffer, int line)
 	const char* delim_two = "/";
 	char* token_code = strtok(token,delim_two);
 	int j = 0;
+	short firstspace = 0;
+
+	int sp = 0, ep = strlen(token_code) - 1;
+	while (isspace(token_code[sp])) sp++;
+	while (isspace(token_code[ep])) ep--;
+
 	// SANITIZE THE STRING;
-	for (int i = 0; i < strlen(token_code); i++)
+	for (int i = sp; i <= ep; i++)
 	{
-		if (!isspace(token_code[i]))
+		switch (token_code[i])
 		{
-			temp_token[j] = token_code[i];
-			j++;
+			case ' ':
+			case '\t':
+				if (firstspace == 1)
+				{
+					temp_token[j] = ' ';
+					j++;
+					firstspace = 0;
+				}
+				break;
+			default:
+				temp_token[j] = token_code[i];
+				firstspace = 1;
+				j++;
 		}
 	}
 	temp_token[j] = '\0';
+
 	if (j > 0)
 	{
 		if (label_present == 1)
@@ -244,10 +256,10 @@ static void parseLine(char* buffer, int line)
 		}
 		else
 		{
-//			printf("%d: token: %s\n", 
-//				line, temp_token);
+			printf("%d: token: '%s'\n", 
+				line, temp_token);
 		}
-		parseInstruction(temp_token, line);
+//		uint8_t parsedhex = parseInstruction(temp_token, line);
 	}
 	return;
 }
@@ -272,16 +284,16 @@ int main(int argc, char* argv[])
 	char buffer[len];
 	
 	labelarray[0].listing = 1;
-	listingarray[0] = 1;
 
 
 	int line = 1;
 	while (fgets(buffer, len, fptr))
 	{
-//		printf("%d %s",line,buffer);
 		parseLine(buffer, line);
 		line++;
 	}
+	
+	fclose(fptr);
 
 	printf("\n");
 //	int labelcount = labelarray[0].listing;
@@ -291,13 +303,22 @@ int main(int argc, char* argv[])
 //		printf("label array %d %s\n", temp_label.listing, temp_label.name);
 //	}
 	
-	uint8_t listingcount = listingarray[0];
-	for (int i = 1; i < listingcount; i++)
+
+	for (int i = 0; i < lacount; i++)
 	{
-		printf("listing %d: %x\n", i, listingarray[i]);
+		struct t_infoblock tempblock = listingarray[i];
+		if (tempblock.isdata == 1)
+		{
+			printf("blockid: %d %X %X\n", i, tempblock.hex, tempblock.data);
+		} 
+		else
+		{
+			printf("blockid: %d %X\n",i, tempblock.hex);
+		}
 	}
 
 
 
-	fclose(fptr);
+
+
 }
