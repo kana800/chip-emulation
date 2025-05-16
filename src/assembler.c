@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "instructions.h"
 
@@ -24,7 +25,9 @@ struct t_infoblock
 //	};
 	uint8_t hex;
 	uint8_t data;
-	char s_data[10];
+	// storing label information
+	uint8_t s_size:2;
+	char s_data[2][15];
 };
 
 
@@ -54,7 +57,8 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 static uint8_t parseInstruction(char* buffer, int line)
 {
 	char temp_code[5];
-	char temp_operand[15];
+	char temp_operand_1[15];
+	char temp_operand[2][15];
 	int buffersize = strlen(buffer);
 	int code_cpy_size = 3;
 
@@ -70,6 +74,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 
 	memcpy(temp_code, buffer, code_cpy_size);
 	temp_code[code_cpy_size] = '\0';
+	printf("\t OPCODE '%s'\n",temp_code);
 
 	// THIS IS NOT EFFICIENT; 
 	// I WILL USE HASHMAPS LATER
@@ -83,14 +88,30 @@ static uint8_t parseInstruction(char* buffer, int line)
 		}
 	}
 
+	int paircount = 0;
+	int pairlength = 0;
+
 	if (buffersize > 3)
 	{
-		memcpy(temp_operand, buffer + code_cpy_size, buffersize + 1);
-		temp_operand[buffersize + 1] = '\0';
+		memcpy(temp_operand_1, buffer + code_cpy_size + 1, buffersize + 1);
+		temp_operand_1[buffersize + 1] = '\0';
+		printf("\t OPERAND '%s'\n", temp_operand_1);
+		char* operand_pair = strtok(temp_operand_1, " ");
+		while (operand_pair != NULL) {
+			pairlength = strlen(operand_pair);
+			memcpy(temp_operand[paircount], operand_pair, pairlength);
+			temp_operand[paircount][pairlength] = '\0';
+			operand_pair = strtok(NULL, " ");
+			paircount += 1;
+		}
 	}
+
+	assert(paircount <= 2);
+
 	
 	uint8_t opa = instructions_hex[ins];
 	uint8_t opr = 0x00;
+	uint8_t opr2 = 0x00;
 	uint8_t hins;
 	
 	switch (ins)
@@ -102,7 +123,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 		case 21:  // "LD"   
 		case 34:  // "SUB"  
 		case 45:  // "XCH"
-			opr = atoi(temp_operand);
+			opr = atoi(temp_operand[0]);
 			if ((opr < 0) || (opr > 15))
 			{
 				handleInstructionError(buffer, line, 0);
@@ -148,7 +169,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 		case 11:  // "FIN"  
 		case 16:  // "JIN"  
 		case 32:  // "SRC"  
-			opr = atoi(temp_operand);
+			opr = atoi(temp_operand[0]);
 			if ((opr < 0) || (opr > 7))
 			{
 				handleInstructionError(buffer, line, 1);
@@ -164,15 +185,20 @@ static uint8_t parseInstruction(char* buffer, int line)
 		case 17:  // "JMS"  
 		case 18:  // "JUN"  
 		case 22:  // "NOP"  
-			printf("\nline: %d parsed OPCODE '%s' %s %s %x %d\n",
-				line, temp_code, temp_operand, instructions[ins], 
-				instructions_hex[ins], instructions_hex[ins]);
-			opr = atoi(temp_operand);
+			opr = atoi(temp_operand[0]);
 			hins = opa | opr;
 			listingarray[lacount].isdata = 1;
 			listingarray[lacount].hex = hins;
 			listingarray[lacount].data = 0xFF;
-			lacount += 1;
+			listingarray[lacount].s_size = paircount;
+			lacount += (paircount + 1);
+			
+			for (int i = 0; i < paircount; i++)
+			{
+				strcpy(listingarray[lacount].s_data[i], 
+					temp_operand[i]);
+			}
+
 			break;
 	}
 	return 0;
@@ -251,15 +277,15 @@ static void parseLine(char* buffer, int line)
 	{
 		if (label_present == 1)
 		{
-//			printf("%d: label: %s token: %s\n", 
-//				line, temp_label, temp_token);
+			printf("%d: label: %s token: '%s'\n", 
+				line, temp_label, temp_token);
 		}
 		else
 		{
 			printf("%d: token: '%s'\n", 
 				line, temp_token);
 		}
-//		uint8_t parsedhex = parseInstruction(temp_token, line);
+		uint8_t parsedhex = parseInstruction(temp_token, line);
 	}
 	return;
 }
@@ -296,7 +322,7 @@ int main(int argc, char* argv[])
 	fclose(fptr);
 
 	printf("\n");
-//	int labelcount = labelarray[0].listing;
+	int labelcount = labelarray[0].listing;
 //	for (int i = 1; i < labelcount; i++)
 //	{
 //		struct t_label temp_label = labelarray[i];
@@ -309,7 +335,12 @@ int main(int argc, char* argv[])
 		struct t_infoblock tempblock = listingarray[i];
 		if (tempblock.isdata == 1)
 		{
-			printf("blockid: %d %X %X\n", i, tempblock.hex, tempblock.data);
+			printf("blockid: %d %X %X %s\n", i, 
+				tempblock.hex, tempblock.data, tempblock.s_data[0]);
+			for (int i = 1; i < labelcount; i++)
+			{
+			
+			}
 		} 
 		else
 		{
