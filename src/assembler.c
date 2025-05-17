@@ -74,7 +74,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 
 	memcpy(temp_code, buffer, code_cpy_size);
 	temp_code[code_cpy_size] = '\0';
-	printf("\t OPCODE '%s'\n",temp_code);
+//	printf("\t OPCODE '%s'\n",temp_code);
 
 	// THIS IS NOT EFFICIENT; 
 	// I WILL USE HASHMAPS LATER
@@ -90,12 +90,13 @@ static uint8_t parseInstruction(char* buffer, int line)
 
 	int paircount = 0;
 	int pairlength = 0;
+	int temp_lacount = lacount;
 
 	if (buffersize > 3)
 	{
 		memcpy(temp_operand_1, buffer + code_cpy_size + 1, buffersize + 1);
 		temp_operand_1[buffersize + 1] = '\0';
-		printf("\t OPERAND '%s'\n", temp_operand_1);
+//		printf("\t OPERAND '%s'\n", temp_operand_1);
 		char* operand_pair = strtok(temp_operand_1, " ");
 		while (operand_pair != NULL) {
 			pairlength = strlen(operand_pair);
@@ -198,10 +199,10 @@ static uint8_t parseInstruction(char* buffer, int line)
 				strcpy(listingarray[lacount].s_data[i], 
 					temp_operand[i]);
 			}
-
 			break;
 	}
-	return 0;
+
+	return lacount;
 }
 
 
@@ -225,6 +226,8 @@ static void parseLine(char* buffer, int line)
 	const char* delim_one = ",";
 	char* token = strtok(buffer, delim_one);
 	short label_present = 0;
+	uint8_t temp_count = lacount;
+	
 	// LABEL PRESENT
 	if (strcmp(temp_buffer, token) != 0)
 	{
@@ -237,7 +240,7 @@ static void parseLine(char* buffer, int line)
 		int count = labelarray[0].listing;
 		memcpy(&labelarray[count].name,temp_label, len);
 		labelarray[count].name[len] = '\0';
-		labelarray[count].listing = line;
+		labelarray[count].listing = lacount;
 		labelarray[0].listing += 1;
 	}
 
@@ -275,17 +278,17 @@ static void parseLine(char* buffer, int line)
 
 	if (j > 0)
 	{
-		if (label_present == 1)
-		{
-			printf("%d: label: %s token: '%s'\n", 
-				line, temp_label, temp_token);
-		}
-		else
-		{
-			printf("%d: token: '%s'\n", 
-				line, temp_token);
-		}
-		uint8_t parsedhex = parseInstruction(temp_token, line);
+		int parsedhex = parseInstruction(temp_token, line);
+//		if (label_present == 1)
+//		{
+//			printf("%d: label: %s token: '%s'\n", 
+//				line, temp_label, temp_token);
+//		}
+//		else
+//		{
+//			printf("%d: token: '%s'\n", 
+//				line, temp_token);
+//		}
 	}
 	return;
 }
@@ -321,7 +324,7 @@ int main(int argc, char* argv[])
 	
 	fclose(fptr);
 
-	printf("\n");
+//	printf("\n");
 	int labelcount = labelarray[0].listing;
 //	for (int i = 1; i < labelcount; i++)
 //	{
@@ -339,7 +342,18 @@ int main(int argc, char* argv[])
 				tempblock.hex, tempblock.data, tempblock.s_data[0]);
 			for (int i = 1; i < labelcount; i++)
 			{
-			
+				struct t_label temp_label = labelarray[i];
+				if (strcmp(temp_label.name, 
+					tempblock.s_data[0]) == 0)
+				{
+					printf("matching block %s == %s\n", labelarray[i].name, tempblock.s_data[0]);
+				}
+
+				if ((tempblock.s_size == 2) && 
+				(strcmp(temp_label.name, tempblock.s_data[1]) == 0))
+				{
+					printf("matching block %s == %s\n", labelarray[i].name, tempblock.s_data[1]);
+				}
 			}
 		} 
 		else

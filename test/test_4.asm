@@ -1,6 +1,0 @@
-IN, XCH 1
- IAC
-	XCH	1
- JCN 10		NC
- INC 0
-NC,	BBL	0
