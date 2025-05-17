@@ -54,6 +54,21 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 	}
 }
 
+
+static uint8_t isLabel(char* buffer, uint8_t len)
+{
+	uint8_t res = 1;
+	for (int i = 0; i < len; i++)
+	{
+		if (isdigit(buffer[i])) 
+		{
+			res = 0;
+			break;
+		}
+	}
+	return res;
+}
+
 static uint8_t parseInstruction(char* buffer, int line)
 {
 	char temp_code[5];
@@ -108,7 +123,6 @@ static uint8_t parseInstruction(char* buffer, int line)
 	}
 
 	assert(paircount <= 2);
-
 	
 	uint8_t opa = instructions_hex[ins];
 	uint8_t opr = 0x00;
@@ -164,6 +178,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 		case 42:  // "WPM"  
 		case 43:  // "WRM"  
 		case 44:  // "WRR"  
+		case 22:  // "NOP"  
 			listingarray[lacount].hex = opa;
 			lacount += 1;
 			break;
@@ -181,13 +196,26 @@ static uint8_t parseInstruction(char* buffer, int line)
 			lacount += 1;
 			break;
 		case 10:  // "FIM"  
+			hins = opa;
+			for (int i = 0; i < paircount; i++)
+			{
+				if (isLabel(temp_operand[i], 
+					strlen(temp_operand[i]) == 1))
+				{
+					strcpy(listingarray[lacount].s_data[i], 
+						temp_operand[i]);
+				} 
+				else
+				{
+					printf("no label %s\n", temp_operand[i]);
+				}
+			}
+			break;
 		case 14:  // "ISZ"  
 		case 15:  // "JCN"  
 		case 17:  // "JMS"  
 		case 18:  // "JUN"  
-		case 22:  // "NOP"  
-			opr = atoi(temp_operand[0]);
-			hins = opa | opr;
+			hins = opa;
 			listingarray[lacount].isdata = 1;
 			listingarray[lacount].hex = hins;
 			listingarray[lacount].data = 0xFF;
@@ -196,9 +224,19 @@ static uint8_t parseInstruction(char* buffer, int line)
 			
 			for (int i = 0; i < paircount; i++)
 			{
-				strcpy(listingarray[lacount].s_data[i], 
-					temp_operand[i]);
+				if (isLabel(temp_operand[i], 
+					strlen(temp_operand[i]) == 1))
+				{
+					printf("label %s\n",temp_operand[i]);
+					strcpy(listingarray[lacount].s_data[i], 
+						temp_operand[i]);
+				} 
+				else
+				{
+					printf("no label %s\n", temp_operand[i]);
+				}
 			}
+
 			break;
 	}
 
