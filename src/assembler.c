@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h> 
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
@@ -51,23 +51,44 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 			fprintf(stderr, 
 				"REGISTER PAIRS OUT OF BOUNDS @%d:%s\n", line, buffer);
 			break;
+		case 2:
+			fprintf(stderr, 
+				"INVALID LABEL FIELD @%d:%s\n", line, buffer);
 	}
 }
 
 
-static uint8_t isLabel(char* buffer, uint8_t len)
+// NOTE: 
+// 1. first characters of a label must be a letter
+// of the alphabet 
+// 2. the remaining characters can be letter or 
+// a decimal number
+// 3. labels mayb be any length, but should have
+// unique first three characters
+static uint8_t isLabel(char* buffer, uint8_t len, int line)
 {
-	uint8_t res = 1;
-	for (int i = 0; i < len; i++)
+	uint8_t res = 0;
+	if (isdigit(buffer[0]))
 	{
-		if (isdigit(buffer[i])) 
-		{
-			res = 0;
-			break;
-		}
+		handleInstructionError(buffer, line, 2);
+		return res;
 	}
+
+//	for (int i = 0; i < len; i++)
+//	{
+//		if (isdigit(buffer[i])) 
+//		{
+//			res = 1;
+//			break;
+//		}
+//	}
 	return res;
 }
+
+static uint8_t operandType(char* buffer, uint8_t len, uint8_t paircount)
+{
+}
+
 
 static uint8_t parseInstruction(char* buffer, int line)
 {
@@ -111,7 +132,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 	{
 		memcpy(temp_operand_1, buffer + code_cpy_size + 1, buffersize + 1);
 		temp_operand_1[buffersize + 1] = '\0';
-//		printf("\t OPERAND '%s'\n", temp_operand_1);
+		printf("\t OPERAND '%s'\n", temp_operand_1);
 		char* operand_pair = strtok(temp_operand_1, " ");
 		while (operand_pair != NULL) {
 			pairlength = strlen(operand_pair);
@@ -197,19 +218,18 @@ static uint8_t parseInstruction(char* buffer, int line)
 			break;
 		case 10:  // "FIM"  
 			hins = opa;
-			for (int i = 0; i < paircount; i++)
-			{
-				if (isLabel(temp_operand[i], 
-					strlen(temp_operand[i]) == 1))
-				{
-					strcpy(listingarray[lacount].s_data[i], 
-						temp_operand[i]);
-				} 
-				else
-				{
-					printf("no label %s\n", temp_operand[i]);
-				}
-			}
+	//		for (int i = 0; i < paircount; i++)
+	//		{
+	//			if (isLabel(temp_operand[i], 
+	//				strlen(temp_operand[i]) == 1))
+	//			{
+	//				strcpy(listingarray[lacount].s_data[i], 
+	//					temp_operand[i]);
+	//			} 
+	//			else
+	//			{
+	//			}
+	//		}
 			break;
 		case 14:  // "ISZ"  
 		case 15:  // "JCN"  
@@ -222,20 +242,20 @@ static uint8_t parseInstruction(char* buffer, int line)
 			listingarray[lacount].s_size = paircount;
 			lacount += (paircount + 1);
 			
-			for (int i = 0; i < paircount; i++)
-			{
-				if (isLabel(temp_operand[i], 
-					strlen(temp_operand[i]) == 1))
-				{
-					printf("label %s\n",temp_operand[i]);
-					strcpy(listingarray[lacount].s_data[i], 
-						temp_operand[i]);
-				} 
-				else
-				{
-					printf("no label %s\n", temp_operand[i]);
-				}
-			}
+//			for (int i = 0; i < paircount; i++)
+//			{
+//				if (isLabel(temp_operand[i], 
+//					strlen(temp_operand[i]) == 1))
+//				{
+//					printf("label %s\n",temp_operand[i]);
+//					strcpy(listingarray[lacount].s_data[i], 
+//						temp_operand[i]);
+//				} 
+//				else
+//				{
+//					printf("no label %s\n", temp_operand[i]);
+//				}
+//			}
 
 			break;
 	}
@@ -273,8 +293,11 @@ static void parseLine(char* buffer, int line)
 		memcpy(temp_label,token,len);
 		temp_label[len] = '\0';
 		token = strtok(NULL, delim_one);
+		uint8_t label_res = isLabel(temp_label, len, line);
+		assert(label_res == 1);
 		label_present = 1;
-
+		// copying the 'label name' to the
+		// label array
 		int count = labelarray[0].listing;
 		memcpy(&labelarray[count].name,temp_label, len);
 		labelarray[count].name[len] = '\0';
