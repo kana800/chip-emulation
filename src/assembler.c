@@ -37,9 +37,12 @@ struct t_infoblock
 static struct t_label labelarray[50];
 
 static struct t_infoblock listingarray[LINE];
-static uint8_t lacount;
 
-static void handleInstructionError(char* buffer, int line, int errcode)
+static uint8_t lacount;
+static unsigned int line;
+
+
+static void handleInstructionError(char* buffer, int errcode)
 {
 	switch (errcode)
 	{
@@ -54,6 +57,9 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 		case 2:
 			fprintf(stderr, 
 				"INVALID LABEL FIELD @%d:%s\n", line, buffer);
+		case 3:
+			fprintf(stderr,
+				"INVALID OPERAND TYPE LINE@%d:%s\n", line, buffer);
 	}
 }
 
@@ -63,14 +69,14 @@ static void handleInstructionError(char* buffer, int line, int errcode)
 // of the alphabet 
 // 2. the remaining characters can be letter or 
 // a decimal number
-// 3. labels mayb be any length, but should have
+// 3. labels maybe any length, but should have
 // unique first three characters
 static uint8_t isLabel(char* buffer, uint8_t len, int line)
 {
 	uint8_t res = 0;
 	if (isdigit(buffer[0]))
 	{
-		handleInstructionError(buffer, line, 2);
+		handleInstructionError(buffer, 2);
 		return res;
 	}
 
@@ -85,8 +91,39 @@ static uint8_t isLabel(char* buffer, uint8_t len, int line)
 	return res;
 }
 
-static uint8_t operandType(char* buffer, uint8_t len, uint8_t paircount)
+static uint8_t operandType(
+	char* buffer, uint8_t len, uint8_t paircount)
 {
+	// operand types can be
+	// 0 -> invalid type
+	// 1 -> int
+	// 2 -> special character '*'
+	// 3 -> label (label existence not checked)
+	// 4 -> register pair
+	// 5 -> arithmetic
+	
+	uint8_t res = 0;
+	
+	if ((atoi(buffer) != 0))
+	{
+		printf("operand type int -> %s\n", buffer);
+	}
+
+	// is register pair
+	// TODO: check if the register pair is in range
+	// 0 - 7
+	if ((buffer[1] == 'P') && (len == 2) 
+		&& (isdigit(buffer[0]))) 
+	{
+		res = 4;
+		return res;
+	}
+
+
+	if (res == 0) handleInstructionError(buffer, 3);
+	assert(res != 0);
+
+	return res;
 }
 
 
@@ -144,6 +181,11 @@ static uint8_t parseInstruction(char* buffer, int line)
 	}
 
 	assert(paircount <= 2);
+
+	// two options for paircount; either one pair or two pairs
+	// if one pair; there are three options
+	// operand is decimal, label or special character '*'
+	// if two pair
 	
 	uint8_t opa = instructions_hex[ins];
 	uint8_t opr = 0x00;
@@ -162,7 +204,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 			opr = atoi(temp_operand[0]);
 			if ((opr < 0) || (opr > 15))
 			{
-				handleInstructionError(buffer, line, 0);
+				handleInstructionError(buffer, 0);
 				break;
 			}
 			hins = opa | opr; 
@@ -209,7 +251,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 			opr = atoi(temp_operand[0]);
 			if ((opr < 0) || (opr > 7))
 			{
-				handleInstructionError(buffer, line, 1);
+				handleInstructionError(buffer, 1);
 				break;
 			}
 			hins = opa | opr << 1;
@@ -218,18 +260,19 @@ static uint8_t parseInstruction(char* buffer, int line)
 			break;
 		case 10:  // "FIM"  
 			hins = opa;
-	//		for (int i = 0; i < paircount; i++)
-	//		{
-	//			if (isLabel(temp_operand[i], 
-	//				strlen(temp_operand[i]) == 1))
-	//			{
-	//				strcpy(listingarray[lacount].s_data[i], 
-	//					temp_operand[i]);
-	//			} 
-	//			else
-	//			{
-	//			}
-	//		}
+			for (int i = 0; i < paircount; i++)
+			{
+				operandType(temp_operand[i], strlen(temp_operand[i]), i);
+			//	if (isLabel(temp_operand[i], 
+			//		strlen(temp_operand[i]) == 1))
+			//	{
+			//		strcpy(listingarray[lacount].s_data[i], 
+			//			temp_operand[i]);
+			//	} 
+			//	else
+			//	{
+			//	}
+			}
 			break;
 		case 14:  // "ISZ"  
 		case 15:  // "JCN"  
@@ -376,7 +419,6 @@ int main(int argc, char* argv[])
 	labelarray[0].listing = 1;
 
 
-	int line = 1;
 	while (fgets(buffer, len, fptr))
 	{
 		parseLine(buffer, line);
