@@ -108,9 +108,9 @@ static uint8_t isLabel(char* buffer, uint8_t len, int line)
 enum e_operandtype {
 	invalid_type,
 	integer,
+	register_pair,
 	special_character,
 	label,
-	register_pair,
 	arithmetic
 };
 
@@ -120,38 +120,38 @@ static uint8_t operandType(
 	// operand types can be
 	// 0 -> invalid type
 	// 1 -> int
-	// 2 -> special character '*'
-	// 3 -> label (label existence not checked)
-	// 4 -> register pair
+	// 2 -> register pair
+	// 3 -> special character '*'
+	// 4 -> label (label existence not checked)
 	// 5 -> arithmetic
 	
 	if (isdigit(buffer[0]))
 	{
 		// checking for register pair
-		if ((buffer[1] == 'P') && (len == 2)) return 4;
+		if ((buffer[1] == 'P') && (len == 2)) return register_pair;
 		// checking for numbers 
 		// and arithmetic operations
-		for (int i = 0;i < len; i++)
+		for (int i = 0; i < len; i++)
 		{
 			char temp_c = buffer[i];
 			switch (temp_c)
 			{
 				case '-':
 				case '+':
-					return 5;
+					return arithmetic;
 				default:
 					if (isalpha(temp_c))
 					{
 						handleInstructionError(buffer, 3);
-						return 0;
+						return invalid_type;
 					}
 			}
 		}
 		return 1;
 	}
 	// check for special character
-	if (buffer[0] == '*') return 2;
-	return 3;
+	if (buffer[0] == '*') return special_character;
+	return label;
 }
 
 
@@ -294,34 +294,46 @@ static uint8_t parseInstruction(char* buffer, int line)
 			listingarray[lacount].hex = hins;
 			lacount += 1;
 			break;
-		case 10:  // "FIM"  
-			if (paircount != 2) 
+		case 10:  // "FIM"
+			if ((paircount != 2) || 
+				(opt_res[0] >= label) ||
+				(opt_res[1] == register_pair))
 			{
 				handleInstructionError(buffer, INVALID_OPERATION);
-				assert(paircount == 2);
+				break;
 			}
 
-			for (int i = 0; i < paircount; i++)
+			uint8_t regpair = atoi(temp_operand[0]);
+			if ((regpair > 14) && (regpair < 0))
 			{
-				switch (opt_res[i])
-				{
-					case integer:
-						uint8_t regpair = 
-							atoi(temp_operand[i]) / 2;
-						if (regpair > 14) 
-						{
-							handleInstructionError(buffer, INVALID_OPERATION);
-						}
-						break;
-					case label:
-						strcpy(listingarray[lacount].s_data[i], 
-							temp_operand[i]);
-						break;
-					default:
-						printf("operand type %d for '%s'\n", 
-							opt_res[i], temp_operand[i]);
-						break;
-				}
+				handleInstructionError(buffer, INVALID_OPERATION);
+				assert((regpair > 14) && (regpair < 0));
+			}
+
+			if (opt_res[0] == integer) regpair / 2; 
+			hins = opa | regpair << 1;
+			listingarray[lacount].hex = hins;
+			lacount += 1;
+
+			if (opt_res[1] == label)
+			{
+				strcpy(listingarray[lacount].s_data[1], 
+					temp_operand[1]);
+				break;
+			}
+			switch (opt_res[1])
+			{
+				case label:
+					strcpy(listingarray[lacount].s_data[1], 
+						temp_operand[1]);
+					break;
+				case arithmetic:
+					break;
+				case integer:
+					uint8_t opr_pair = atoi(temp_operand[1]);
+					listingarray[lacount].hex = opr_pair;
+					lacount += 1;
+					break;
 			}
 			break;
 		case 14:  // "ISZ"  
