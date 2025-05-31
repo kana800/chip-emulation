@@ -28,6 +28,7 @@ struct t_infoblock
 	// storing label information
 	uint8_t s_size:2;
 	char s_data[2][15];
+	uint8_t bytesread;
 };
 
 
@@ -315,17 +316,12 @@ static uint8_t parseInstruction(char* buffer, int line)
 			listingarray[lacount].hex = hins;
 			lacount += 1;
 
-			if (opt_res[1] == label)
-			{
-				strcpy(listingarray[lacount].s_data[1], 
-					temp_operand[1]);
-				break;
-			}
 			switch (opt_res[1])
 			{
 				case label:
 					strcpy(listingarray[lacount].s_data[1], 
 						temp_operand[1]);
+					lacount += 1;
 					break;
 				case arithmetic:
 					break;
@@ -336,43 +332,115 @@ static uint8_t parseInstruction(char* buffer, int line)
 					break;
 			}
 			break;
-		case 14:  // "ISZ"  
-		case 15:  // "JCN"  
+		case 14:  // "ISZ"
+			// valid operands are
+			// REG ADDR
+			// REG can be register_pair || integer
+			// ADDR can be integer || label
+			// i am sorry
+			if (((opt_res[0] != register_pair) 
+				&& (opt_res[0] != integer)) 
+				|| ((opt_res[1] != integer) 
+				&& (opt_res[1] != label))
+			)
+			{
+				handleInstructionError(buffer, INVALID_OPERATION);
+				break;
+			} 
+
+			uint8_t reg_pair = atoi(temp_operand[0]);
+			hins = opa | reg_pair;
+			listingarray[lacount].hex = hins;
+			lacount += 1;
+
+			switch (opt_res[1])
+			{
+				case label:
+					strcpy(listingarray[lacount].s_data[1], 
+						temp_operand[1]);
+					lacount += 1;
+					break;
+				case integer:
+					uint8_t opr_pair = atoi(temp_operand[1]);
+					listingarray[lacount].hex = opr_pair;
+					lacount += 1;
+					break;
+				default:
+					handleInstructionError(buffer, 
+							INVALID_OPERATION);
+					break;
+			}
+			break;
+		case 15:  // "JCN"
+			if ((paircount != 2) || (opt_res[0] != integer) && 
+				((opt_res[1] != integer) || (opt_res[1] != label)))
+			{
+				handleInstructionError(buffer, INVALID_OPERATION);
+				break;
+			}
+
+			uint8_t condition = atoi(temp_operand[0]);
+			hins = opa | condition;
+			listingarray[lacount].hex = hins;
+			lacount += 1;
+
+			switch (opt_res[1])
+			{
+				case label:
+					strcpy(listingarray[lacount].s_data[1], 
+						temp_operand[1]);
+					lacount += 1;
+					break;
+				case integer:
+					uint8_t opr_pair = atoi(temp_operand[1]);
+					listingarray[lacount].hex = opr_pair;
+					lacount += 1;
+					break;
+				default:
+					handleInstructionError(buffer, 
+							INVALID_OPERATION);
+					break;
+			}
+			listingarray[lacount].bytesread = 2;
+			break;
 		case 17:  // "JMS"  
 		case 18:  // "JUN"  
 			hins = opa;
-			listingarray[lacount].isdata = 1;
-			listingarray[lacount].hex = hins;
-			listingarray[lacount].data = 0xFF;
-			listingarray[lacount].s_size = paircount;
-			lacount += (paircount + 1);
-			
-			for (int i = 0; i < paircount; i++)
+	
+			if (((opt_res[0] != integer) || (opt_res[0] != label)) 
+				&& (paircount != 1))
 			{
-				uint8_t opt_res = operandType(temp_operand[i], 
-				  strlen(temp_operand[i]), i);
-				assert(opt_res != 0);
-				printf("operand type %d for '%s'\n", 
-					opt_res, temp_operand[i]);
+				handleInstructionError(buffer, 
+						INVALID_OPERATION);
+				break;
 			}
-			break;
 
-//			for (int i = 0; i < paircount; i++)
-//			{
-//				if (isLabel(temp_operand[i], 
-//					strlen(temp_operand[i]) == 1))
-//				{
-//					printf("label %s\n",temp_operand[i]);
-//					strcpy(listingarray[lacount].s_data[i], 
-//						temp_operand[i]);
-//				} 
-//				else
-//				{
-//					printf("no label %s\n", temp_operand[i]);
-//				}
-//			}
-
-			break;
+			listingarray[lacount].hex = hins;
+		
+			switch (opt_res[0])
+			{
+				case label:
+					listingarray[lacount].isdata = 1;
+					listingarray[lacount].data = 0xFF;
+					listingarray[lacount].s_size = paircount;
+					listingarray[lacount].hex = hins;
+					strcpy(listingarray[lacount].s_data[0], 
+						temp_operand[0]);
+					lacount += (paircount + 1);
+					break;
+				case integer:
+					int opr_pair = atoi(temp_operand[0]);
+					if (opr_pair > 256)
+					listingarray[lacount].hex = hins | opr_pair >> 4;
+					lacount += (paircount + 1);
+					break;
+				default:
+					handleInstructionError(buffer, 
+							INVALID_OPERATION);
+					break;
+			}
+			listingarray[lacount].bytesread = 2;
+			break;	
 	}
 
 	return lacount;
@@ -455,16 +523,6 @@ static void parseLine(char* buffer, int line)
 	if (j > 0)
 	{
 		int parsedhex = parseInstruction(temp_token, line);
-//		if (label_present == 1)
-//		{
-//			printf("%d: label: %s token: '%s'\n", 
-//				line, temp_label, temp_token);
-//		}
-//		else
-//		{
-//			printf("%d: token: '%s'\n", 
-//				line, temp_token);
-//		}
 	}
 	return;
 }
@@ -499,13 +557,12 @@ int main(int argc, char* argv[])
 	
 	fclose(fptr);
 
-//	printf("\n");
 	int labelcount = labelarray[0].listing;
-//	for (int i = 1; i < labelcount; i++)
-//	{
-//		struct t_label temp_label = labelarray[i];
-//		printf("label array %d %s\n", temp_label.listing, temp_label.name);
-//	}
+	for (int i = 1; i < labelcount; i++)
+	{
+		struct t_label temp_label = labelarray[i];
+		printf("label array %d %s\n", temp_label.listing, temp_label.name);
+	}
 	
 
 	for (int i = 0; i < lacount; i++)
@@ -513,7 +570,7 @@ int main(int argc, char* argv[])
 		struct t_infoblock tempblock = listingarray[i];
 		if (tempblock.isdata == 1)
 		{
-			printf("blockid: %d %X %X %s\n", i, 
+			printf("blockid %d: %X %X", i, 
 				tempblock.hex, tempblock.data, tempblock.s_data[0]);
 			for (int i = 1; i < labelcount; i++)
 			{
@@ -521,7 +578,7 @@ int main(int argc, char* argv[])
 				if (strcmp(temp_label.name, 
 					tempblock.s_data[0]) == 0)
 				{
-					printf("matching block %s == %s\n", labelarray[i].name, tempblock.s_data[0]);
+					printf(" %X\n", i);
 				}
 
 				if ((tempblock.s_size == 2) && 
@@ -533,7 +590,7 @@ int main(int argc, char* argv[])
 		} 
 		else
 		{
-			printf("blockid: %d %X\n",i, tempblock.hex);
+			printf("blockid %d: %X\n",i, tempblock.hex);
 		}
 	}
 
