@@ -334,7 +334,6 @@ static uint8_t parseInstruction(char* buffer, int line)
 					strcpy(listingarray[lacount].s_label[0], 
 						temp_operand[1]);
 					listingarray[lacount].s_lblcnt += 1;
-					lacount += (paircount + 1);
 					break;
 				case arithmetic:
 					break;
@@ -342,10 +341,10 @@ static uint8_t parseInstruction(char* buffer, int line)
 					uint8_t opr_pair = atoi(temp_operand[1]);
 					listingarray[lacount].isdata = 1;
 					listingarray[lacount].data = opr_pair;
-					lacount += (paircount + 1);
 					break;
 			}
 			listingarray[lacount].bytesread = 2;
+			lacount += (paircount);
 			break;
 		case 14:  // "ISZ"
 			// valid operands are
@@ -400,7 +399,6 @@ static uint8_t parseInstruction(char* buffer, int line)
 			uint8_t condition = atoi(temp_operand[0]);
 			hins = opa | condition;
 			listingarray[lacount].code = hins;
-			lacount += 1;
 
 			switch (opt_res[1])
 			{
@@ -448,7 +446,7 @@ static uint8_t parseInstruction(char* buffer, int line)
 					listingarray[lacount].islabel = 1;
 					strcpy(listingarray[lacount].s_label[0], 
 						temp_operand[0]);
-					lacount += (paircount + 1);
+					lacount += (paircount);
 					break;
 				case integer:
 					int opr_pair = atoi(temp_operand[0]);
@@ -459,7 +457,6 @@ static uint8_t parseInstruction(char* buffer, int line)
 						listingarray[lacount].data = 
 							opr_pair >> 4;
 					}
-					lacount += (paircount + 1);
 					break;
 				default:
 					handleInstructionError(buffer, 
@@ -467,6 +464,8 @@ static uint8_t parseInstruction(char* buffer, int line)
 					break;
 			}
 			listingarray[lacount].bytesread = 2;
+			lacount += (paircount);
+
 			break;	
 	}
 
@@ -588,15 +587,16 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < labelcount; i++)
 	{
 		struct t_label temp_label = labelarray[i];
-		printf("label array %d %s\n", temp_label.listing, temp_label.name);
 	}
 	
 	int bid = 0;
 	int bytesread = 0;
+	FILE * fwptr = fopen("out", "wb");
 	for (; bid < lacount;)
 	{
 		struct t_infoblock tempblock = listingarray[bid];
-		printf("blockid %d: %X", bid, tempblock.code);
+		printf("blockid %d: %02X ", bid, tempblock.code);
+		fprintf(fwptr, "%02X ", tempblock.code);
 		bytesread = 1;
 		if ((tempblock.isdata == 1) || (tempblock.islabel == 1))
 		{
@@ -608,7 +608,8 @@ int main(int argc, char* argv[])
 					if ((strcmp(temp_label.name, 
 						tempblock.s_label[0]) == 0))
 					{
-						printf(" %X", temp_label.listing);
+						printf("%02X ", temp_label.listing);
+						fprintf(fwptr, "%02X ", temp_label.listing);
 						bytesread += 1;
 					}
 
@@ -616,23 +617,23 @@ int main(int argc, char* argv[])
 						strcmp(temp_label.name, 
 						tempblock.s_label[1]) == 0)
 					{
-						printf(" %X", temp_label.listing);
+						printf("%02X ", temp_label.listing);
+						fprintf(fwptr, "%02X ", temp_label.listing);
 						bytesread += 1;
 					}
 				}
 			} 
 			else 
 			{
-				printf(" %X", tempblock.data);
-				bytesread += 1;
+				printf("%02X", tempblock.data);
+				fprintf(fwptr, "%02X ", tempblock.data);
+				bytesread = tempblock.bytesread;
 			}
 		} 
 		printf("\n");
 		bid += bytesread;
 	}
-
-
-
-
-
+	fprintf(fwptr, "\b");
+	fclose(fwptr);
+	return 0;
 }
