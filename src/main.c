@@ -2,11 +2,9 @@
 
 #include "chip.h"
 
+static struct t_chip chip; 
 
 int main(int argc, char* argv[])
 {
-	struct t_chip* chip = initChip();
-	printRegister(chip);
-	free(chip);
-	return 0;
+	printf("%d", chip.RP[0]);
 }
