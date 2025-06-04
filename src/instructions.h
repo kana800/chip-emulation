@@ -43,4 +43,12 @@ const uint8_t instructions_hex[INS_SIZE] = {
     0b10110000
 };
 
+const char
+
+
+
+
+
+
+
 #endif // INSTRUCTION_H

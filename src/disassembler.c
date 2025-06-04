@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 int main(int argc, char* argv[])
@@ -33,8 +34,20 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	printf("%s\n", buffer);
-
+	//const char* delim = " ";
+	//char* tok = strtok(buffer, delim);
+	//int i = 0;
+	//while (tok != NULL)
+	//{
+	//	printf("%d %s\n", i, tok);
+	//}
+	char hexcode[2];
+	for (int i = 0; i < len; i += 3)
+	{
+		memcpy(hexcode, buffer + i, 2);
+		int hexval = strtol(hexcode, NULL, 16);
+		printf("%d %s %d\n", i, hexcode, hexval);
+	}
 
 	return 0;
 }
