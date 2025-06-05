@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 
 int main(int argc, char* argv[])
@@ -42,11 +43,32 @@ int main(int argc, char* argv[])
 	//	printf("%d %s\n", i, tok);
 	//}
 	char hexcode[2];
+	bool isoperand = false;
+	bool isembed = false;
+	uint8_t opr = 0;
+
 	for (int i = 0; i < len; i += 3)
 	{
 		memcpy(hexcode, buffer + i, 2);
 		int hexval = strtol(hexcode, NULL, 16);
 //		printf("%d %s %d\n", i, hexcode, hexval);
+		if (isoperand)
+		{
+			if (isembed)
+			{
+				printf("%d\n", hexval + opr);
+				isembed = false;
+			}
+			else
+			{
+				printf("%d\n", hexval);
+			}
+			isoperand = false;
+			continue;
+		}
+		
+		opr = 0;
+
 		switch (hexval)
 		{
 			case 16: // 0x10
@@ -65,7 +87,10 @@ int main(int argc, char* argv[])
 			case 29: // 0x1D
 			case 30: // 0x1E
 			case 31: // 0x1F
-				printf("JCN\n"); // CN = 15
+				printf("JCN "); // CN = 15
+				opr = hexval & 0b00001111;
+				isoperand = true;
+				isembed = true;
 				break;
 			case 32: // 0x20
 			case 34: // 0x22
@@ -75,7 +100,9 @@ int main(int argc, char* argv[])
 			case 42: // 0x2A
 			case 44: // 0x2C
 			case 46: // 0x2E
-				printf("FIM\n");
+				opr = (hexval >> 1) & 0b00000111; 
+				printf("FIM %dP ", opr);
+				isoperand = true;
 				break;
 			case 33: // 0x21
 			case 35: // 0x23
@@ -85,7 +112,8 @@ int main(int argc, char* argv[])
 			case 43: // 0x2B
 			case 45: // 0x2D
 			case 47: // 0x2F
-				printf("SRC\n");
+				opr = (hexval >> 1) & 0b00000111; 
+				printf("SRC %dP\n", opr);
 				break;
 			case 48: // 0x30
 			case 50: // 0x32
@@ -95,7 +123,8 @@ int main(int argc, char* argv[])
 			case 58: // 0x3A
 			case 60: // 0x3C
 			case 62: // 0x3E
-				printf("FIN\n");
+				opr = (hexval >> 1) & 0b00000111; 
+				printf("FIN %dP\n", opr);
 				break;
 			case 49: // 0x31
 			case 51: // 0x33
@@ -104,7 +133,8 @@ int main(int argc, char* argv[])
 			case 57: // 0x39
 			case 59: // 0x3B
 			case 61: // 0x3D
-				printf("JIN\n");
+				opr = (hexval >> 1) & 0b00000111; 
+				printf("JIN %dP\n", opr);
 				break;
 			case 63: // 0x3F
 			case 64: // 0x40
@@ -123,7 +153,11 @@ int main(int argc, char* argv[])
 			case 77: // 0x4D
 			case 78: // 0x4E
 			case 79: // 0x4F
-				printf("JUN\n");
+				printf("JUN ");
+				opr = hexval & 0b00001111;
+				isoperand = true;
+				isembed = true;
+				break;
 			case 80: // 0x50
 			case 81: // 0x51
 			case 82: // 0x52
@@ -140,7 +174,10 @@ int main(int argc, char* argv[])
 			case 93: // 0x5D
 			case 94: // 0x5E
 			case 95: // 0x5F
-				printf("JMS\n");
+				printf("JMS ");
+				opr = hexval & 0b00001111;
+				isoperand = true;
+				isembed = true;
 			case 96: // 0x60
 			case 97: // 0x61
 			case 98: // 0x62
@@ -157,7 +194,9 @@ int main(int argc, char* argv[])
 			case 109: // 0x6D
 			case 110: // 0x6E
 			case 111: // 0x6F
-				printf("INS\n");
+				opr = hexval & 0b00001111;
+				printf("ISZ %dP ");
+				isoperand = true;
 				break;
 			case 112: // 0x70
 			case 113: // 0x71
@@ -193,7 +232,8 @@ int main(int argc, char* argv[])
 			case 141: // 0x8D
 			case 142: // 0x8E
 			case 143: // 0x8F
-				printf("ADD\n");
+				opr = hexval & 0b00001111;
+				printf("ADD %d\n", opr);
 				break;
 			case 144: // 0x90
 			case 145: // 0x91
@@ -211,7 +251,8 @@ int main(int argc, char* argv[])
 			case 157: // 0x9D
 			case 158: // 0x9E
 			case 159: // 0x9F
-				printf("SUB\n");
+				opr = hexval & 0b00001111;
+				printf("SUB %d\n", opr);
 				break;
 			case 160: // 0xA0
 			case 161: // 0xA1
@@ -229,7 +270,8 @@ int main(int argc, char* argv[])
 			case 173: // 0xAD
 			case 174: // 0xAE
 			case 175: // 0xAF
-				printf("LD\n");
+				opr = hexval & 0b00001111;
+				printf("LD R%d\n");
 				break;
 			case 176: // 0xB0
 			case 177: // 0xB1
@@ -247,7 +289,8 @@ int main(int argc, char* argv[])
 			case 189: // 0xBD
 			case 190: // 0xBE
 			case 191: // 0xBF
-				printf("XCH\n");
+				opr = hexval & 0b00001111;
+				printf("XCH R%d\n", opr);
 				break;
 			case 192: // 0xC0
 			case 193: // 0xC1
@@ -298,22 +341,22 @@ int main(int argc, char* argv[])
 				printf("WPM\n");
 				break;
 			case 228: // 0xE4
-				printf("WPM\n");
-				break;
-			case 229: // 0xE5
 				printf("WR0\n");
 				break;
-			case 230: // 0xE6
+			case 229: // 0xE5
 				printf("WR1\n");
 				break;
-			case 231: // 0xE7
+			case 230: // 0xE6
 				printf("WR2\n");
 				break;
-			case 232: // 0xE8
+			case 231: // 0xE7
 				printf("WR3\n");
 				break;
-			case 233: // 0xE9
+			case 232: // 0xE8
 				printf("SBM\n");
+				break;
+			case 233: // 0xE9
+				printf("RDM\n");
 				break;
 			case 234: // 0xEA
 				printf("RDR\n");
@@ -375,10 +418,6 @@ int main(int argc, char* argv[])
 			case 253: // 0xFD
 				printf("DCL\n");
 				break;
-			default:
-				fprintf(stdout, 
-					"unknown value %s -> %d\n", 
-				hexcode , hexval);
 		}
 	}
 
