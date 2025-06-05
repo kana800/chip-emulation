@@ -14,7 +14,7 @@ main: $(SRCDIR)/main.c $(SRCDIR)/chip.h
 assembler: $(SRCDIR)/assembler.c
 	$(CC) $^ -g -o $(BUILDDIR)/$@.out
 
-diassm: $(SRCDIR)/disassembler.c
+disasm: $(SRCDIR)/disassembler.c
 	$(CC) $^ -g -o $(BUILDDIR)/$@.out
 
 test_assembler: assembler
