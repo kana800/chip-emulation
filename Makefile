@@ -8,8 +8,8 @@ TESTDIR:=test
 ASMINPUT:=$(wildcard $(TESTDIR)/test_asm_*.asm)
 ASMOUT:=$(wildcard $(TESTDIR)/test_asm_*.out)
 
-main: $(SRCDIR)/main.c $(SRCDIR)/chip.h
-	$(CC) $^ -o $(BUILDDIR)/$@.out
+emu: $(SRCDIR)/emulator.c
+	$(CC) $^ -g -o $(BUILDDIR)/$@.out
 
 assembler: $(SRCDIR)/assembler.c
 	$(CC) $^ -g -o $(BUILDDIR)/$@.out

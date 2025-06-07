@@ -3,13 +3,20 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "chip.h"
+
+static struct t_chip chip; 
+
+void infoWindow()
+{
+}
 
 int main(int argc, char* argv[])
 {
 
 	if (argc != 2)
 	{
-		fprintf(stdout, "usage: disassembler <object-file>\n");
+		fprintf(stdout, "usage: emulator <object-file>\n");
 		return -1;
 	}
 
@@ -35,13 +42,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	//const char* delim = " ";
-	//char* tok = strtok(buffer, delim);
-	//int i = 0;
-	//while (tok != NULL)
-	//{
-	//	printf("%d %s\n", i, tok);
-	//}
 	char hexcode[2];
 	bool isoperand = false;
 	bool isembed = false;
@@ -51,7 +51,6 @@ int main(int argc, char* argv[])
 	{
 		memcpy(hexcode, buffer + i, 2);
 		int hexval = strtol(hexcode, NULL, 16);
-//		printf("%d %s %d\n", i, hexcode, hexval);
 		if (isoperand)
 		{
 			if (isembed)
@@ -378,37 +377,109 @@ int main(int argc, char* argv[])
 				printf("RD3\n");
 				break;
 			case 240: // 0xF0
-				printf("CLB\n");
+				// CLB CLEAR BOTH
+				// accumulator is set to 0000B and
+				// carry bit is reset;
+				chip.ACCUMULATOR = 0;
+				chip.CARRYBIT = 0;
 				break;
 			case 241: // 0xF1
-				printf("CLC\n");
+				// CLC CLEAR CARRY
+				// carry bit is set to zero
+				chip.CARRYBIT = 0;
 				break;
 			case 242: // 0xF2
-				printf("IAC\n");
+				// IAC INCREMENT ACCUMULATOR
+				// contents of the accumulator are
+				// incremented by one; the carry bit
+				// is set if there is a carry out of 
+				// high order bit position, and reset 
+				// if there is no carry.
+				chip.CARRYBIT = 0;
+				if (chip.ACCUMULATOR >= 15) 
+				{
+					chip.CARRYBIT = 1;
+				}
+				chip.ACCUMULATOR += 0b0001;
 				break;
 			case 243: // 0xF3
-				printf("CMC\n");
+				// CMC COMPLEMENT CARRY
+				// if carry bit is zero set to one
+				// if carry bit is one set to zero
+				chip.CARRYBIT = ~chip.CARRYBIT;
 				break;
 			case 244: // 0xF4
-				printf("CMA\n");
+				// CMA COMPLEMENT ACCUMULATOR
+				// Each bit of the contents of
+				// accumulator is complemented
+				// ( one's complement ) carry
+				// bit not affected
+				chip.ACCUMULATOR |= 0b1111;
 				break;
 			case 245: // 0xF5
-				printf("RAL\n");
+				// RAL ROTATE ACCUMULATOR LEFT 
+				// THROUGH CARRY
+				// The contents of the accumulator 
+				// are rotated one bit position to the left
+				// high order bit of the accumulator replaces
+				// carry bit while the low order bit of the 
+				// the accumulator
+				uint8_t accumulator = chip.ACCUMULATOR >> 3;
+				chip.ACCUMULATOR = 
+					( chip.ACCUMULATOR << 1 ) | chip.CARRYBIT;
+				chip.CARRYBIT = accumulator;
 				break;
 			case 246: // 0xF6
-				printf("RAR\n");
+				// RAR ROTATE ACCUMULATOR RIGHT
+				// THROUGH CARRY
+				// opposite of RAL
+				uint8_t accumulator = chip.ACCUMULATOR << 3;
+				chip.ACCUMULATOR = 
+					( chip.ACCUMULATOR >> 1 ) | chip.CARRYBIT;
+				chip.CARRYBIT = accumulator;
 				break;
 			case 247: // 0xF7
-				printf("TCC\n");
+				// TCC TRANSMIT CARRY AND CLEAR
+				// If carry bit = 0, the accumulator is set 0000B
+				// If carry bit = 1, the accumulator is set 0001B
+				// carry bit is reset;
+				chip.accumulator = 0b0001;
+				if (chip.CARRYBIT = 0) 
+				{
+					chip.accumulator = 0b0000;
+				}
+				chip.CARRYBIT = 0;
 				break;
 			case 248: // 0xF8
-				printf("DAC\n");
+				// DAC DECREMENT ACCUMULATOR
+				// the contents of the accumulator is decremented
+				// by one. The carry bit is set if there is no
+				// borrow out of the high order bit position, and 
+				// rest if there is a borrow
+				chip.ACCUMULATOR += 0b1111;
+				if (chip.ACCUMULATOR >= 15) 
+				{
+					chip.CARRYBIT = 0;
+				}
+				chip.ACCUMULATOR += 0b1111;
 				break;
 			case 249: // 0xF9
-				printf("TCS\n");
+				// TCS TRANSFER CARRY SUBTRACT
+				// if carry bit is 0, the 
+				// accumulator is set to 9. 
+				// if carry bit is 1, the 
+				// accumulator is set to 10
+				// carry bit is reset
+				chip.ACCUMULATOR = 9;
+				if (chip.CARRYBIT == 1)
+				{
+					chip.ACCUMULATOR += 1;
+				}
 				break;
 			case 250: // 0xFA
-				printf("STC\n");
+				// STC SET CARRY
+				// set carry bit to 1
+				chip.CARRYBIT = 1;
 				break;
 			case 251: // 0xFB
 				printf("DAA\n");
@@ -421,6 +492,7 @@ int main(int argc, char* argv[])
 				break;
 		}
 	}
+	printf("CHIP %d ACCUMULATOR %d", chip.CARRYBIT, chip.ACCUMULATOR);
 
 	return 0;
 }

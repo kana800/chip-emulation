@@ -10,7 +10,7 @@ struct t_chip
 	uint8_t RAM[2048]; // RAM
 	uint8_t RAMSTATUS[512]; // STATUS
 	
-	uint8_t ACCUMULATOR;
+	uint8_t ACCUMULATOR:4;
 	uint8_t CARRYBIT:1;
 
 	uint16_t STACK[3]; // stack is 3 12-bit register)
@@ -18,5 +18,6 @@ struct t_chip
 
 	uint8_t IOPORTS; // 4 bit input (upper) or output ports (lower) 
 };
+
 
 #endif // CHIP_H
