@@ -19,5 +19,22 @@ struct t_chip
 	uint8_t IOPORTS; // 4 bit input (upper) or output ports (lower) 
 };
 
+static struct t_chip chip; 
+
+static void resetAccumulator()
+{
+	chip.ACCUMULATOR = 0;
+	chip.CARRYBIT = 0;
+}
+
+static void addToAccumulator(uint8_t value)
+{
+	if (chip.CARRYBIT == 1) resetAccumulator();
+	if (chip.ACCUMULATOR == 15) 
+	{
+		chip.CARRYBIT = 1;
+	}
+	chip.ACCUMULATOR += value;
+}
 
 #endif // CHIP_H

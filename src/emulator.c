@@ -2,14 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "chip.h"
-
-static struct t_chip chip; 
-
-void infoWindow()
-{
-}
 
 int main(int argc, char* argv[])
 {
@@ -67,6 +62,7 @@ int main(int argc, char* argv[])
 		}
 		
 		opr = 0;
+		uint8_t accumulator = 0;
 
 		switch (hexval)
 		{
@@ -395,12 +391,7 @@ int main(int argc, char* argv[])
 				// is set if there is a carry out of 
 				// high order bit position, and reset 
 				// if there is no carry.
-				chip.CARRYBIT = 0;
-				if (chip.ACCUMULATOR >= 15) 
-				{
-					chip.CARRYBIT = 1;
-				}
-				chip.ACCUMULATOR += 0b0001;
+				addToAccumulator(0b0001);
 				break;
 			case 243: // 0xF3
 				// CMC COMPLEMENT CARRY
@@ -424,7 +415,7 @@ int main(int argc, char* argv[])
 				// high order bit of the accumulator replaces
 				// carry bit while the low order bit of the 
 				// the accumulator
-				uint8_t accumulator = chip.ACCUMULATOR >> 3;
+				accumulator = chip.ACCUMULATOR >> 3;
 				chip.ACCUMULATOR = 
 					( chip.ACCUMULATOR << 1 ) | chip.CARRYBIT;
 				chip.CARRYBIT = accumulator;
@@ -433,7 +424,7 @@ int main(int argc, char* argv[])
 				// RAR ROTATE ACCUMULATOR RIGHT
 				// THROUGH CARRY
 				// opposite of RAL
-				uint8_t accumulator = chip.ACCUMULATOR << 3;
+				accumulator = chip.ACCUMULATOR << 3;
 				chip.ACCUMULATOR = 
 					( chip.ACCUMULATOR >> 1 ) | chip.CARRYBIT;
 				chip.CARRYBIT = accumulator;
@@ -443,10 +434,10 @@ int main(int argc, char* argv[])
 				// If carry bit = 0, the accumulator is set 0000B
 				// If carry bit = 1, the accumulator is set 0001B
 				// carry bit is reset;
-				chip.accumulator = 0b0001;
+				chip.ACCUMULATOR = 0b0001;
 				if (chip.CARRYBIT = 0) 
 				{
-					chip.accumulator = 0b0000;
+					chip.ACCUMULATOR = 0b0000;
 				}
 				chip.CARRYBIT = 0;
 				break;
@@ -482,10 +473,23 @@ int main(int argc, char* argv[])
 				chip.CARRYBIT = 1;
 				break;
 			case 251: // 0xFB
-				printf("DAA\n");
+				// DAA DECIMAL ADJUST ACCUMULATOR
+				// contents of the accumulator are greater
+				// than 9, or if the carry bit = 1, accumulator
+				// is incremented by 6;
+				if ((chip.ACCUMULATOR > 9) 
+					|| (chip.CARRYBIT))
+				{
+					addToAccumulator(6);
+				}
 				break;
 			case 252: // 0xFC
-				printf("KBP\n");
+				// KEYBOARD PROCESS 
+				// if accumulator contains 0000b; remains unchanged
+				// one bit of accumulator is set; the accumulator
+				// set a number from 1 to 4 indicating which bit 
+				// was set
+
 				break;
 			case 253: // 0xFD
 				printf("DCL\n");
