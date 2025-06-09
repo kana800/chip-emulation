@@ -489,7 +489,18 @@ int main(int argc, char* argv[])
 				// one bit of accumulator is set; the accumulator
 				// set a number from 1 to 4 indicating which bit 
 				// was set
-
+				switch (chip.ACCUMULATOR)
+				{
+					case 0b0000:
+					case 0b0001:
+					case 0b0010:
+					case 0b0100:
+					case 0b1000:
+						break;
+					default:
+						chip.ACCUMULATOR = 0b1111;
+						break;
+				}
 				break;
 			case 253: // 0xFD
 				printf("DCL\n");
