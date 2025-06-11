@@ -25,3 +25,6 @@ test_emulator: $(TESTDIR)/test_emu_accumulator.c
 	echo "running accumulator testing..."
 	./$(BUILDDIR)/$@.out
 	echo "test completed"
+
+clean:
+	rm -r out

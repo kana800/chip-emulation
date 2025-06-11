@@ -9,6 +9,7 @@ struct t_chip
 	uint8_t ROM[4096]; // ROM
 	uint8_t RAM[2048]; // RAM
 	uint8_t RAMSTATUS[512]; // STATUS
+	uint8_t DATARAMSELECTED:3; 
 	
 	uint8_t ACCUMULATOR:4;
 	uint8_t CARRYBIT:1;
