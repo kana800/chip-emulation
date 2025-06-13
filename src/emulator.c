@@ -32,29 +32,36 @@ int main(int argc, char* argv[])
 	if (bytesread_f != len)
 	{
 		fprintf(stderr, 
-			"short read of '%s': expected %d bytes\n", argv[1], len);
+			"short read of '%s': expected %d bytes\n", 
+			argv[1], len);
 		return -1;
 	}
 
 	char hexcode[2];
+	int bytesloaded = 0;
 	// loading the program into the ROM
-	for (int i = 0, j = 0; i < len; j++, i += 3)
+	for (int i = 0; i < len; bytesloaded += 1, i += 3)
 	{
 		memcpy(hexcode, buffer + i, 2);
 		int hexval = strtol(hexcode, NULL, 16);
-		chip.ROM[j] = hexval;
+		chip.ROM[bytesloaded] = hexval;
 	}
+	bytesloaded -= 1;
 
-	bool isoperand = false;
-	bool isembed = false;
 	uint8_t opr = 0;
 
 	uint16_t programcounter = 0;
 	uint8_t hexval = 0;
 	bool run = true;
+	
 
-	while (run)
+	while (run) 
 	{
+		opr = 0;
+		uint8_t accumulator = 0;
+		
+		if (programcounter >= bytesloaded) break;
+
 		hexval = chip.ROM[programcounter];
 		switch (hexval)
 		{
@@ -89,7 +96,7 @@ int main(int argc, char* argv[])
 			case 46: // 0x2E
 				opr = (hexval >> 1) & 0b00000111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("FIM %dP %d", opr, hexval);
+				printf("FIM %dP %d\n", opr, hexval);
 				programcounter += 2;
 				break;
 			case 33: // 0x21
@@ -188,7 +195,7 @@ int main(int argc, char* argv[])
 			case 111: // 0x6F
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("ISZ %dP %d", opr, hexval);
+				printf("ISZ %dP %d\n", opr, hexval);
 				programcounter += 2;
 				break;
 			case 112: // 0x70
@@ -546,29 +553,5 @@ int main(int argc, char* argv[])
 				break;
 		}
 	}
-
-
-//	for (int i = 0; i < len; i += 3)
-//	{
-//		memcpy(hexcode, buffer + i, 2);
-//		int hexval = strtol(hexcode, NULL, 16);
-//		if (isoperand)
-//		{
-//			if (isembed)
-//			{
-//				printf("%d\n", hexval + opr);
-//				isembed = false;
-//			}
-//			else
-//			{
-//				printf("%d\n", hexval);
-//			}
-//			isoperand = false;
-//			continue;
-//		}
-//		
-//		opr = 0;
-//		uint8_t accumulator = 0;
-
 	return 0;
 }
