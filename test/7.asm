@@ -1,0 +1,4 @@
+JMS SUB
+NOP
+SUB, INC 1
+BBL 6

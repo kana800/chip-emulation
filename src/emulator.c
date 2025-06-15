@@ -172,10 +172,15 @@ int main(int argc, char* argv[])
 			case 93: // 0x5D
 			case 94: // 0x5E
 			case 95: // 0x5F
+				// JMS the address of the instruction
+				// immeditately following JMS is written
+				// to the addres of the stack
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
 				printf("JMS %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
+				chip.STACK[chip.stackpointer] = programcounter;
+				programcounter = hexval + opr;
 				break;
 			case 96: // 0x60
 			case 97: // 0x61
@@ -193,10 +198,8 @@ int main(int argc, char* argv[])
 			case 109: // 0x6D
 			case 110: // 0x6E
 			case 111: // 0x6F
-				opr = hexval & 0b00001111;
-				hexval = chip.ROM[programcounter + 1];
-				printf("ISZ %dP %d\n", opr, hexval);
-				programcounter += 2;
+				printf("inc\n");
+				programcounter += 1;
 				break;
 			case 112: // 0x70
 			case 113: // 0x71
@@ -214,8 +217,10 @@ int main(int argc, char* argv[])
 			case 125: // 0x7D
 			case 126: // 0x7E
 			case 127: // 0x7F
-				printf("ISZ\n");
-				programcounter += 1;
+				opr = hexval & 0b00001111;
+				hexval = chip.ROM[programcounter + 1];
+				printf("ISZ %dP %d\n", opr, hexval);
+				programcounter += 2;
 				break;
 			case 128: // 0x80
 			case 129: // 0x81
@@ -313,8 +318,11 @@ int main(int argc, char* argv[])
 			case 205: // 0xCD
 			case 206: // 0xCE
 			case 207: // 0xCF
+				// BBL branch back and load
 				printf("BBL\n");
-				programcounter += 1;
+				opr = hexval & 0b00001111;
+				chip.ACCUMULATOR = opr;
+				programcounter = chip.STACK[chip.stackpointer];
 				break;
 			case 208: // 0xD0
 			case 209: // 0xD1
@@ -372,6 +380,10 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 233: // 0xE9
+				// RDM READ DATA RAM DATA CHAR
+				// The DATA RAM data character specified
+				// by the last SRC instruction is loaded into
+				// the accumulator.
 				printf("RDM\n");
 				programcounter += 1;
 				break;
