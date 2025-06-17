@@ -172,7 +172,8 @@ int main(int argc, char* argv[])
 			case 93: // 0x5D
 			case 94: // 0x5E
 			case 95: // 0x5F
-				// JMS the address of the instruction
+				// JMS 
+				// the address of the instruction
 				// immeditately following JMS is written
 				// to the addres of the stack
 				opr = hexval & 0b00001111;
@@ -198,7 +199,13 @@ int main(int argc, char* argv[])
 			case 109: // 0x6D
 			case 110: // 0x6E
 			case 111: // 0x6F
-				printf("inc\n");
+				// INC INCREMENT REGISTER
+				// Index register indicated by REG
+				// is increment by one;
+				opr = hexval & 0b00001111;
+				printf("INC %d\n", opr);
+				assert(15 > opr >= 0);
+				chip.RP[opr] += 1;
 				programcounter += 1;
 				break;
 			case 112: // 0x70
@@ -348,6 +355,10 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 225: // 0xE1
+				// WPM WRITE PROGROM RAM
+				// Special nstruction which mayb be used to 
+				// write the contents of the accumulator into a 
+				// half byte of program RAM, or 
 				printf("WMP\n");
 				programcounter += 1;
 				break;
