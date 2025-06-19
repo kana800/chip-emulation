@@ -120,7 +120,10 @@ int main(int argc, char* argv[])
 			case 60: // 0x3C
 			case 62: // 0x3E
 				opr = (hexval >> 1) & 0b00000111; 
+				uint16_t regval =  hexval << 8 | 
+					chip.RP[0] << 4 | chip.RP[1];
 				printf("FIN %dP\n", opr);
+				chip.RP[opr] = buffer[regval];
 				programcounter += 1;
 				break;
 			case 49: // 0x31
@@ -224,6 +227,14 @@ int main(int argc, char* argv[])
 			case 125: // 0x7D
 			case 126: // 0x7E
 			case 127: // 0x7F
+				// ISZ INCREMENT AND SKIP IF ZERO
+				// index register specified by REG is
+				// incremented by one. 
+				// If the result is 0000B, program execution
+				// continues
+				// If the result is not equal to 0000B, the 
+				// 8 bits specified by ADDR replace the lowest
+				// 8 bits of the program counter,
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
 				printf("ISZ %dP %d\n", opr, hexval);
@@ -247,6 +258,7 @@ int main(int argc, char* argv[])
 			case 143: // 0x8F
 				opr = hexval & 0b00001111;
 				printf("ADD %d\n", opr);
+				addToAccumulator(chip.RP[opr]);
 				programcounter += 1;
 				break;
 			case 144: // 0x90
@@ -285,8 +297,11 @@ int main(int argc, char* argv[])
 			case 173: // 0xAD
 			case 174: // 0xAE
 			case 175: // 0xAF
+				// LD LOAD ACCUMULATOR
+				// The contens of the Register is
+				// store into the accumulator
 				opr = hexval & 0b00001111;
-				printf("LD R%d\n");
+				chip.ACCUMULATOR = chip.RP[opr];
 				programcounter += 1;
 				break;
 			case 176: // 0xB0
@@ -305,8 +320,15 @@ int main(int argc, char* argv[])
 			case 189: // 0xBD
 			case 190: // 0xBE
 			case 191: // 0xBF
+				// XCH EXCHANGE REGISTER AND
+				// ACCUMULATOR
+				// content of register is swapped
+				// with the accumulator
 				opr = hexval & 0b00001111;
 				printf("XCH R%d\n", opr);
+				accumulator = chip.ACCUMULATOR;
+				chip.ACCUMULATOR = chip.RP[opr];
+				chip.RP[opr] = accumulator;
 				programcounter += 1;
 				break;
 			case 192: // 0xC0
