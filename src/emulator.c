@@ -107,8 +107,18 @@ int main(int argc, char* argv[])
 			case 43: // 0x2B
 			case 45: // 0x2D
 			case 47: // 0x2F
+				// SRC SEND REGISTER CONTROL
+				// 8 bits in the register pair
+				// is used by an address.
+				// Address in the RP can be
+				// 1. DATA RAM DATA CHARACTER
+				// 2. DATA RAM STAUS CHARACTER
+				// 3. RAM OUTPUT PORT
+				// 4. ROM I/O PORT
 				opr = (hexval >> 1) & 0b00000111; 
 				printf("SRC %dP\n", opr);
+				uint8_t addr = chip.RP[opr];
+				
 				programcounter += 1;
 				break;
 			case 48: // 0x30
@@ -232,9 +242,10 @@ int main(int argc, char* argv[])
 				// incremented by one. 
 				// If the result is 0000B, program execution
 				// continues
-				// If the result is not equal to 0000B, the 
+				// If the result is not equal to 0000B, the
 				// 8 bits specified by ADDR replace the lowest
-				// 8 bits of the program counter,
+				// 8 bits of the program counter.
+				// highest 4 bits remains unchanged.
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
 				printf("ISZ %dP %d\n", opr, hexval);

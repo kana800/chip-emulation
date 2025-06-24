@@ -3,10 +3,14 @@
 
 #include <stdint.h>
 
+typedef struct {
+	uint8_t data:4;
+} uint4_t;
+
 struct t_chip
 {
 	uint8_t RP[16]; // REGISTER/PAIRS
-	
+
 	uint8_t ROM[4096]; // ROM
 	uint8_t RAM[2048]; // RAM
 	uint8_t RAMSTATUS[512]; // STATUS
