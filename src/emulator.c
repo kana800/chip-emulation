@@ -380,7 +380,12 @@ int main(int argc, char* argv[])
 			case 221: // 0xDD
 			case 222: // 0xDE
 			case 223: // 0xDF
+				// LDM LOAD ACCUMULATOR IMMEDIATE
+				// 4 bits of immediate data are loaded
+				// into the accumulator
 				printf("LDM\n");
+				opr = hexval & 0b00001111;
+				chip.ACCUMULATOR = opr;
 				programcounter += 1;
 				break;
 			case 224: // 0xE0
@@ -388,11 +393,15 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 225: // 0xE1
-				// WPM WRITE PROGROM RAM
-				// Special nstruction which mayb be used to 
-				// write the contents of the accumulator into a 
-				// half byte of program RAM, or 
+				// WMP WRITE RAM PORT
+				// The contents of the accumulator are
+				// written to the output port associated
+				// with the DATA RAM chip selected by last 
+				// SRC insturction. This value will stay
+				// at the output port until over written
 				printf("WMP\n");
+				chip.RAMOUTPUT[chip.DATARAMSELECTED] =
+					chip.ACCUMULATOR;
 				programcounter += 1;
 				break;
 			case 226: // 0xE2
@@ -400,6 +409,12 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 227: // 0xE3
+				// WPM WRITE PROGROM RAM
+				// Special nstruction which maybe used to 
+				// write the contents of the accumulator into a 
+				// half byte of program RAM, or read the contents
+				// of a half bytes of program RAM into ROM input
+				// port where it can be accessed by a program
 				printf("WPM\n");
 				programcounter += 1;
 				break;

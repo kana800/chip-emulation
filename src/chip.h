@@ -23,6 +23,7 @@ struct t_chip
 	uint8_t stackpointer:3;
 
 	uint8_t IOPORTS; // 4 bit input (upper) or output ports (lower) 
+	uint8_t RAMOUTPUT[8]; // 4 bit per output; and have 8 RAM banks
 };
 
 static struct t_chip chip; 
