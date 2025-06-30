@@ -48,10 +48,14 @@ int main(int argc, char* argv[])
 	}
 	bytesloaded -= 1;
 
-	uint8_t opr = 0;
-
+	uint8_t opr = 0; // operand
+	int idx = 0;   // ram index
+	uint8_t addr = 0; // temp 8 bit address 
+	uint8_t r = 0; // register
+	uint8_t c = 0; // data chip
+	uint8_t b = 0; // bank
 	uint16_t programcounter = 0;
-	uint8_t hexval = 0;
+	uint8_t hexval = 0; // hex value of the operand or byteread
 	bool run = true;
 	
 
@@ -97,6 +101,7 @@ int main(int argc, char* argv[])
 				opr = (hexval >> 1) & 0b00000111;
 				hexval = chip.ROM[programcounter + 1];
 				printf("FIM %dP %d\n", opr, hexval);
+				addToRegisterPair(opr, hexval);
 				programcounter += 2;
 				break;
 			case 33: // 0x21
@@ -117,8 +122,7 @@ int main(int argc, char* argv[])
 				// 4. ROM I/O PORT
 				opr = (hexval >> 1) & 0b00000111; 
 				printf("SRC %dP\n", opr);
-				uint8_t addr = chip.RP[opr];
-				
+				chip.SRCADDRREG = opr;
 				programcounter += 1;
 				break;
 			case 48: // 0x30
@@ -405,7 +409,14 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 226: // 0xE2
-				printf("WRR\n");
+				// WRR WRITE ROM PORT
+				// The contents of the accumulator are 
+				// written to the output port associated
+				// with the ROM selected by the last SRC instruction
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr >> 4) & 0b00001111;
+				chip.ACCUMULATOR = ;
+				
 				programcounter += 1;
 				break;
 			case 227: // 0xE3
@@ -444,6 +455,12 @@ int main(int argc, char* argv[])
 				// by the last SRC instruction is loaded into
 				// the accumulator.
 				printf("RDM\n");
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr & 0b00001111);
+				c = (addr >> 4) & (0b00000011);
+				b = (addr >> 6) & (0b00000011);
+				idx = getDataRAMAddr(b, c, r);
+				chip.ACCUMULATOR = chip.RAM[idx];
 				programcounter += 1;
 				break;
 			case 234: // 0xEA
@@ -451,7 +468,16 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 235: // 0xEB
-				printf("ADM\n");
+				// ADM ADD DATA RAM TO ACCUMULATOR WITH CARRY
+				// DATA RAM character specified by last SRC
+				// instruction plus carry bit are added into
+				// the accumulator
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr & 0b00001111);
+				c = (addr >> 4) & (0b00000011);
+				b = (addr >> 6) & (0b00000011);
+				idx = getDataRAMAddr(b, c, r);
+				addToAccumulator(chip.RAM[idx]);
 				programcounter += 1;
 				break;
 			case 236: // 0xEC
