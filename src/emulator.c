@@ -403,8 +403,9 @@ int main(int argc, char* argv[])
 				// with the DATA RAM chip selected by last 
 				// SRC insturction. This value will stay
 				// at the output port until over written
-				printf("WMP\n");
-				chip.RAMOUTPUT[chip.DATARAMSELECTED] =
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr >> 4) & 0b00000011;
+				chip.RAM_OUTPUT[chip.DATARAMSELECTED + r] =
 					chip.ACCUMULATOR;
 				programcounter += 1;
 				break;
@@ -415,18 +416,18 @@ int main(int argc, char* argv[])
 				// with the ROM selected by the last SRC instruction
 				addr = chip.RP[chip.SRCADDRREG];
 				r = (addr >> 4) & 0b00001111;
-				chip.ACCUMULATOR = ;
-				
+				chip.ROM_IO = chip.ACCUMULATOR;
 				programcounter += 1;
 				break;
 			case 227: // 0xE3
-				// WPM WRITE PROGROM RAM
-				// Special nstruction which maybe used to 
+				// WPM WRITE PROGRAM RAM
 				// write the contents of the accumulator into a 
 				// half byte of program RAM, or read the contents
 				// of a half bytes of program RAM into ROM input
 				// port where it can be accessed by a program
 				printf("WPM\n");
+				chip.RAM_OUTPUT[chip.DATARAMSELECTED] = 
+					chip.ACCUMULATOR;
 				programcounter += 1;
 				break;
 			case 228: // 0xE4
@@ -642,7 +643,7 @@ int main(int argc, char* argv[])
 			case 253: // 0xFD
 				// DCL DESGINATE COMMAND LINE
 				// using rightmost 3 bits of accumulator
-				// to determine which of the 8 data banks
+				// to determine which of the 4 data banks
 				// will be referenced.
 				chip.DATARAMSELECTED = 
 					chip.ACCUMULATOR & 0b0111;
