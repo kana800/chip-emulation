@@ -13,7 +13,7 @@ struct t_chip
 
 	uint8_t ROM[4096]; // ROM
 	uint16_t RAM[128]; // RAM
-	uint8_t RAMSTATUS[512]; // STATUS
+	uint8_t RAMSTATUS[128]; // STATUS
 	
 	uint8_t DATARAMSELECTED:3; 
 
@@ -80,7 +80,6 @@ static int getDataRAMAddr(uint8_t bank,
 			 uint8_t chip, uint8_t reg)
 {
 	int addr = ( bank * 16 ) + ( chip * 4 ) + reg;
-//	printf("bank %d chip %d reg %d -> %d\n", bank, chip, reg, addr);
 	return addr;
 }
 

@@ -431,7 +431,15 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 228: // 0xE4
+				// WRn WRITE DATA RAM STATUS CHARACTER
+				// Data RAM status characters whoe number
+				// from 0 to 3 is sp
 				printf("WR0\n");
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr & 0b00001111);
+				c = (addr >> 4) & (0b00000011);
+				b = chip.DATARAMSELECTED;
+				idx = getDataRAMAddr(b, c, r);
 				programcounter += 1;
 				break;
 			case 229: // 0xE5
