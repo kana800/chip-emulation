@@ -3,7 +3,6 @@
 
 #include "../src/chip.h"
 
-
 int main(int argc, char* argv[])
 {
 	
@@ -24,10 +23,16 @@ int main(int argc, char* argv[])
 				idx = getDataRAMAddr(i, j, k); 
 				printf("Bank:%d Chip:%d Reg:%d -> ", i, j, k);
 				printf("R-Index %d S-Index %d\n", idx, idx);
-				lc++;
 			}
 		}
 	}
 
+	setRamRegisterBit(0, 0, 0, 0, 1);
+	assert(chip.RAM[0] == 0x01);
+	setRamRegisterBit(0, 0, 0, 1, 2);
+	assert(chip.RAM[0] == 0x21);
+	setRamRegisterBit(0, 0, 0, 0, 0);
+	assert(chip.RAM[0] == 0x20);
 
+	int b = 0;
 }

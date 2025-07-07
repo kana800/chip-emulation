@@ -83,4 +83,22 @@ static int getDataRAMAddr(uint8_t bank,
 	return addr;
 }
 
+// 16 bit RAM registers addressed with 
+// 4 bit characters;
+static void setRamRegisterBit(
+	uint8_t b, uint8_t c, uint8_t r, 
+	uint8_t bit, uint8_t val)
+{
+	assert(bit >= 0 && bit < 4);
+	assert(val >= 0x0 && val <= 0xF);
+	int addr = getDataRAMAddr(b, c, r);
+	
+	uint16_t tempval = (0b0000000000000000 | val << (bit * 4));
+	chip.RAM[addr] &= ~(0b0000000000000000 | 0xF << (bit * 4));
+	chip.RAM[addr] |= tempval;
+	return;
+}
+
+
+
 #endif // CHIP_H
