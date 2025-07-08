@@ -12,7 +12,7 @@ struct t_chip
 	uint8_t RP[8]; // REGISTER/PAIRS
 
 	uint8_t ROM[4096]; // ROM
-	uint16_t RAM[128]; // RAM
+	uint16_t RAM[512]; // RAM
 	uint8_t RAMSTATUS[128]; // STATUS
 	
 	uint8_t DATARAMSELECTED:3; 
@@ -80,22 +80,48 @@ static int getDataRAMAddr(uint8_t bank,
 			 uint8_t chip, uint8_t reg)
 {
 	int addr = ( bank * 16 ) + ( chip * 4 ) + reg;
-	return addr;
+	return addr * 4;
 }
 
-// 16 bit RAM registers addressed with 
-// 4 bit characters;
-static void setRamRegisterBit(
-	uint8_t b, uint8_t c, uint8_t r, 
-	uint8_t bit, uint8_t val)
+
+static void displayRamRegister(uint8_t b, 
+			 uint8_t c, uint8_t r)
 {
-	assert(bit >= 0 && bit < 4);
+	int baseaddr = getDataRAMAddr(b, c, r);
+	printf("(bank %d:chip %d:reg %d)\n---\n0123456789012345\n",b,c,r);
+	for (int i = 0; i < 4; i++)
+	{
+		if (chip.RAM[baseaddr + i] == 0x0)
+		{
+			printf("0000");
+		} else
+		{
+			printf("%x",chip.RAM[baseaddr + i]);
+		}
+	}
+	printf("\n---\n");
+}
+
+static void setRamRegisterCharacter(
+	uint8_t bnk, uint8_t chp, uint8_t reg, 
+	uint8_t character, uint8_t val)
+{
+	assert(bnk >= 0 && bnk < 8);
+	assert(chp >= 0 && reg < 4);
+	assert(chp >= 0 && reg < 4);
+	assert(character >= 0 && character < 16);
 	assert(val >= 0x0 && val <= 0xF);
-	int addr = getDataRAMAddr(b, c, r);
-	
+
+	int baseaddr = getDataRAMAddr(bnk, chp, reg);
+	int addr = baseaddr + ( character / 4 );
+	int bit = character - (addr - baseaddr) * 4;
+
 	uint16_t tempval = (0b0000000000000000 | val << (bit * 4));
 	chip.RAM[addr] &= ~(0b0000000000000000 | 0xF << (bit * 4));
 	chip.RAM[addr] |= tempval;
+
+//	printf("base %d addr %d bit %d %x\n", baseaddr, addr, bit, chip.RAM[addr]);
+
 	return;
 }
 
