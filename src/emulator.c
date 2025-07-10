@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
 	uint8_t r = 0; // register
 	uint8_t c = 0; // data chip
 	uint8_t b = 0; // bank
+	uint8_t chr = 0; // data character
 	uint16_t programcounter = 0;
 	uint8_t hexval = 0; // hex value of the operand or byteread
 	bool run = true;
@@ -393,7 +394,20 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 224: // 0xE0
-				printf("WRM\n");
+				// WRM WRITE DATA RAM CHARACTER
+				// The contents of the accumulator are
+				// written into the DATA RAM character
+				// specified by the last SRC instruction
+				// [xx|xx|xxxx]
+				//   ^ data ram chip
+				//	^ register
+				//	   ^ character
+				addr = chip.RP[chip.SRCADDRREG];
+				chr = (addr & 0b00001111);
+				r = (addr >> 4) & (0b00000011);
+				c = (addr >> 6) & (0b00000011);
+				b = chip.DATARAMSELECTED;
+				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
 				break;
 			case 225: // 0xE1
@@ -440,6 +454,9 @@ int main(int argc, char* argv[])
 				c = (addr >> 4) & (0b00000011);
 				b = chip.DATARAMSELECTED;
 				idx = getDataRAMAddr(b, c, r);
+//				setRamRegisterCharacter(b,c,r, 
+//				uint8_t character, uint8_t val)
+
 				programcounter += 1;
 				break;
 			case 229: // 0xE5

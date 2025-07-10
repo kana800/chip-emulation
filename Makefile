@@ -38,6 +38,5 @@ test_ram: $(TESTDIR)/test_emu_ram.c
 	./$(BUILDDIR)/$@.out
 	echo "test completed"
 
-
 clean:
 	rm -r out

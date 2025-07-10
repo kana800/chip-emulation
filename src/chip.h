@@ -2,6 +2,7 @@
 #define CHIP_H
 
 #include <stdint.h>
+#define DEBUG 0 
 
 typedef struct {
 	uint8_t data:4;
@@ -13,7 +14,7 @@ struct t_chip
 
 	uint8_t ROM[4096]; // ROM
 	uint16_t RAM[512]; // RAM
-	uint8_t RAMSTATUS[128]; // STATUS
+	uint8_t RAMSTATUS[256]; // STATUS
 	
 	uint8_t DATARAMSELECTED:3; 
 
@@ -83,6 +84,12 @@ static int getDataRAMAddr(uint8_t bank,
 	return addr * 4;
 }
 
+static int getDataRAMStatus(uint8_t bank, 
+			 uint8_t chip, uint8_t reg)
+{
+	int addr = ( bank * 16 ) + ( chip * 4 ) + reg;
+	return addr * 2;
+}
 
 static void displayRamRegister(uint8_t b, 
 			 uint8_t c, uint8_t r)
@@ -96,7 +103,7 @@ static void displayRamRegister(uint8_t b,
 			printf("0000");
 		} else
 		{
-			printf("%x",chip.RAM[baseaddr + i]);
+			printf("%X",chip.RAM[baseaddr + i]);
 		}
 	}
 	printf("\n---\n");
@@ -120,11 +127,35 @@ static void setRamRegisterCharacter(
 	chip.RAM[addr] &= ~(0b0000000000000000 | 0xF << (bit * 4));
 	chip.RAM[addr] |= tempval;
 
-//	printf("base %d addr %d bit %d %x\n", baseaddr, addr, bit, chip.RAM[addr]);
-
+#if DEBUG
+	printf("base %d addr %d bit %d %x\n", baseaddr, addr, bit, chip.RAM[addr]);
+#endif
 	return;
 }
 
+static void setRamRegisterStatusCharacter(
+	uint8_t bnk, uint8_t chp, uint8_t reg, 
+	uint8_t character, uint8_t val)
+{
+	assert(bnk >= 0 && bnk < 8);
+	assert(chp >= 0 && reg < 4);
+	assert(chp >= 0 && reg < 4);
+	assert(character >= 0 && character < 4);
+	assert(val >= 0x0 && val <= 0xF);
+
+	int baseaddr = getDataRAMStatus(bnk, chp, reg);
+	int addr = baseaddr + ( character / 4 );
+	int bit = character - (addr - baseaddr) * 4;
+
+	uint16_t tempval = (0b0000000000000000 | val << (bit * 4));
+	chip.RAM[addr] &= ~(0b0000000000000000 | 0xF << (bit * 4));
+	chip.RAM[addr] |= tempval;
+
+#if DEBUG
+	printf("base %d addr %d bit %d %x\n", baseaddr, addr, bit, chip.RAM[addr]);
+#endif
+	return;
+}
 
 
 #endif // CHIP_H
