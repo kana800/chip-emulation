@@ -445,30 +445,24 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 228: // 0xE4
+			case 229: // 0xE5
+			case 230: // 0xE6
+			case 231: // 0xE7
 				// WRn WRITE DATA RAM STATUS CHARACTER
 				// Data RAM status characters whoe number
-				// from 0 to 3 is sp
-				printf("WR0\n");
+				// from 0 to 3 is specified by field by n
+				// DATA RAM register specified by the last 
+				// SRC instruction, ar replaced by the contents
+				// of the accumulator.
+				// [xx|xx|xxxx]
+				//  ^ data ram chip 
+				//	^ register
 				addr = chip.RP[chip.SRCADDRREG];
-				r = (addr & 0b00001111);
-				c = (addr >> 4) & (0b00000011);
+				chr =  hexval - 228;
+				r = (addr >> 4) & (0b00000011);
+				c = (addr >> 6) & (0b00000011);
 				b = chip.DATARAMSELECTED;
-				idx = getDataRAMAddr(b, c, r);
-//				setRamRegisterCharacter(b,c,r, 
-//				uint8_t character, uint8_t val)
-
-				programcounter += 1;
-				break;
-			case 229: // 0xE5
-				printf("WR1\n");
-				programcounter += 1;
-				break;
-			case 230: // 0xE6
-				printf("WR2\n");
-				programcounter += 1;
-				break;
-			case 231: // 0xE7
-				printf("WR3\n");
+				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
 				break;
 			case 232: // 0xE8
@@ -507,7 +501,15 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 236: // 0xEC
-				printf("RD0\n");
+				// READ DATA RAM STATUS CHARACTER
+				// RDR 0 - 3
+				addr = chip.RP[chip.SRCADDRREG];
+				chr =  hexval - 236;
+				r = (addr >> 4) & (0b00000011);
+				c = (addr >> 6) & (0b00000011);
+				b = chip.DATARAMSELECTED;
+				idx = getDataRAMStatus(b, c, r, chr);
+				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
 				break;
 			case 237: // 0xED

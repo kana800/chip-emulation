@@ -44,7 +44,8 @@ int main(int argc, char* argv[])
 	displayRamRegister(0,0,0);
 
 	// RAM STATUS
-
-
+	// bank, chip, reg, chr, val
+	// REG 1 -> 000F
+	setRamRegisterStatusCharacter(0,0,0,1,0xF);
 
 }

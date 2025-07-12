@@ -147,9 +147,9 @@ static void setRamRegisterStatusCharacter(
 	int addr = baseaddr + ( character / 4 );
 	int bit = character - (addr - baseaddr) * 4;
 
-	uint16_t tempval = (0b0000000000000000 | val << (bit * 4));
-	chip.RAM[addr] &= ~(0b0000000000000000 | 0xF << (bit * 4));
-	chip.RAM[addr] |= tempval;
+	uint16_t tempval = (0b00000000 | val << (bit * 4));
+	chip.RAMSTATUS[addr] &= ~(0b00000000 | 0xF << (bit * 4));
+	chip.RAMSTATUS[addr] |= tempval;
 
 #if DEBUG
 	printf("base %d addr %d bit %d %x\n", baseaddr, addr, bit, chip.RAM[addr]);
@@ -157,5 +157,23 @@ static void setRamRegisterStatusCharacter(
 	return;
 }
 
+static uint8_t getDataRAMStatusValue(
+	uint8_t bnk, uint8_t chp, uint8_t reg, 
+	uint8_t character)
+{
+	assert(bnk >= 0 && bnk < 8);
+	assert(chp >= 0 && reg < 4);
+	assert(chp >= 0 && reg < 4);
+	assert(character >= 0 && character < 4);
+
+	int baseaddr = getDataRAMStatus(bnk, chp, reg);
+	int addr = baseaddr + ( character / 4 );
+	int bit = character - (addr - baseaddr) * 4;
+
+//	uint8_t tempval = (0b00000000 | val << (bit * 4));
+	chip.RAMSTATUS[addr] &= ~(0b00000000 | 0xF << (bit * 4));
+
+	return 0;
+}
 
 #endif // CHIP_H
