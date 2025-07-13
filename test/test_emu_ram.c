@@ -50,10 +50,30 @@ int main(int argc, char* argv[])
 	setDataRamStatusCharacter(0,0,0,1,0xA);
 	setDataRamStatusCharacter(0,0,0,2,0xB);
 	setDataRamStatusCharacter(0,0,0,3,0xD);
+
 	assert(chip.RAMSTATUS[0] == 0xAF);
 	assert(chip.RAMSTATUS[1] == 0xDB);
 
-	// RAM STATUS getvaluefn
-	getDataRamStatusValue(0,0,0,1);
+	setDataRamStatusCharacter(0,0,1,0,0xF);
+	setDataRamStatusCharacter(0,0,1,1,0xF);
+	setDataRamStatusCharacter(0,0,1,2,0xF);
+	setDataRamStatusCharacter(0,0,1,3,0xF);
 
+	assert(chip.RAMSTATUS[2] == 0xFF);
+	assert(chip.RAMSTATUS[3] == 0xFF);
+
+	setDataRamStatusCharacter(7,3,3,0,0xF);
+	setDataRamStatusCharacter(7,3,3,1,0xA);
+	setDataRamStatusCharacter(7,3,3,2,0xF);
+	setDataRamStatusCharacter(7,3,3,3,0xD);
+
+	assert(chip.RAMSTATUS[254] == 0xAF);
+	assert(chip.RAMSTATUS[255] == 0xDF);
+
+	// RAM STATUS
+	// bank, chip, reg, character
+	assert(getDataRamStatusValue(0,0,0,1) == 0xA);
+	assert(getDataRamStatusValue(0,0,0,3) == 0xD);
+	assert(getDataRamStatusValue(7,3,3,2) == 0xF);
+	assert(getDataRamStatusValue(4,2,3,1) == 0x0);
 }
