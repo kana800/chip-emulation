@@ -508,7 +508,6 @@ int main(int argc, char* argv[])
 				r = (addr >> 4) & (0b00000011);
 				c = (addr >> 6) & (0b00000011);
 				b = chip.DATARAMSELECTED;
-				idx = getDataRAMStatus(b, c, r, chr);
 				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
 				break;

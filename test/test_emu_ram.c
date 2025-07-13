@@ -45,7 +45,15 @@ int main(int argc, char* argv[])
 
 	// RAM STATUS
 	// bank, chip, reg, chr, val
-	// REG 1 -> 000F
-	setRamRegisterStatusCharacter(0,0,0,1,0xF);
+	// REG 1 -> DBAF
+	setDataRamStatusCharacter(0,0,0,0,0xF);
+	setDataRamStatusCharacter(0,0,0,1,0xA);
+	setDataRamStatusCharacter(0,0,0,2,0xB);
+	setDataRamStatusCharacter(0,0,0,3,0xD);
+	assert(chip.RAMSTATUS[0] == 0xAF);
+	assert(chip.RAMSTATUS[1] == 0xDB);
+
+	// RAM STATUS getvaluefn
+	getDataRamStatusValue(0,0,0,1);
 
 }
