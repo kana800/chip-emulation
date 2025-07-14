@@ -22,12 +22,17 @@ int main(int argc, char* argv[])
 		fprintf(stdout,"(%d) state carry:%d accumulator:%d\n", 
 			i + 1, chip.CARRYBIT, chip.ACCUMULATOR);
 	}
+
 //	assert ( chip.ACCUMULATOR == 0b0000 );
 //	assert ( chip.CARRYBIT == 1);
 //	addToAccumulator(0b0001);	
 //	assert ( chip.ACCUMULATOR == 0b0001 );
 //	assert ( chip.CARRYBIT == 0);
 	
-	
+	printf("carry: %d accumulator:%d\n", chip.CARRYBIT, chip.ACCUMULATOR);
+	subFromAccumulator(0b0001);
+	printf("carry: %d accumulator:%d\n", chip.CARRYBIT, chip.ACCUMULATOR);
+
+
 	return 0;
 }

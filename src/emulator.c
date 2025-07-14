@@ -430,7 +430,7 @@ int main(int argc, char* argv[])
 				// with the ROM selected by the last SRC instruction
 				addr = chip.RP[chip.SRCADDRREG];
 				r = (addr >> 4) & 0b00001111;
-				chip.ROM_IO = chip.ACCUMULATOR;
+				chip.ROM_OUTPUT[r] = chip.ACCUMULATOR;
 				programcounter += 1;
 				break;
 			case 227: // 0xE3
@@ -484,7 +484,10 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 234: // 0xEA
-				printf("RDR\n");
+				// RDR READ ROM PORT
+				// ROM port specified by the src instruction
+				addr = chip.RP[chip.SRCADDRREG];
+				r = (addr & 0b11110000) >> 4;
 				programcounter += 1;
 				break;
 			case 235: // 0xEB
@@ -501,26 +504,17 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 236: // 0xEC
+			case 237: // 0xED
+			case 238: // 0xEE
+			case 239: // 0xEF
 				// READ DATA RAM STATUS CHARACTER
-				// RDR 0 - 3
+				// RDN where N: 0 - 3
 				addr = chip.RP[chip.SRCADDRREG];
 				chr =  hexval - 236;
 				r = (addr >> 4) & (0b00000011);
 				c = (addr >> 6) & (0b00000011);
 				b = chip.DATARAMSELECTED;
-				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
-				programcounter += 1;
-				break;
-			case 237: // 0xED
-				printf("RD1\n");
-				programcounter += 1;
-				break;
-			case 238: // 0xEE
-				printf("RD2\n");
-				programcounter += 1;
-				break;
-			case 239: // 0xEF
-				printf("RD3\n");
+				chip.ACCUMULATOR = getDataRamStatusValue(b, c, r, chr);
 				programcounter += 1;
 				break;
 			case 240: // 0xF0

@@ -20,7 +20,7 @@ disasm: $(SRCDIR)/disassembler.c
 test_assembler: assembler
 #	$(foreach var,$(ASMINPUT),)
 
-test_emulator: $(TESTDIR)/test_emu_accumulator.c
+test_accu: $(TESTDIR)/test_emu_accumulator.c
 	$(CC) $^ -g -o $(BUILDDIR)/$@.out
 	echo "running accumulator testing..."
 	./$(BUILDDIR)/$@.out

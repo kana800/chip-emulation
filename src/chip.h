@@ -31,7 +31,7 @@ struct t_chip
 
 //	uint8_t IOPORTS; // 4 bit input (upper) or output ports (lower) 
 	uint8_t RAM_OUTPUT[16]; // 4 bit per output per chip; 4 chips per 1 bank
-	uint8_t ROM_IO; // 4 bit per output; and have 4 RAM banks
+	uint8_t ROM_OUTPUT[4]; // 4 bit per output
 };
 
 static struct t_chip chip; 
@@ -76,6 +76,16 @@ static void addToAccumulator(uint8_t value)
 	}
 	chip.ACCUMULATOR += value;
 }
+
+static void subFromAccumulator(uint8_t value)
+{
+	// if carry bit is 1 it means no borrowing
+	// if carry bit is 0 it means borrowed
+	chip.ACCUMULATOR += (~value + ~chip.CARRYBIT);
+	if (value > chip.ACCUMULATOR) chip.CARRYBIT = 0;
+}
+
+
 
 static int getDataRAMAddr(uint8_t bank, 
 			 uint8_t chip, uint8_t reg)
