@@ -466,7 +466,16 @@ int main(int argc, char* argv[])
 				programcounter += 1;
 				break;
 			case 232: // 0xE8
-				printf("SBM\n");
+				// SBM SUBTRACT DATA FROM MEMORY WITH BORROW
+				// value of the data ram character specified 
+				// by the last SRC instruction is substracted
+				// from the accumulator with a borrow.
+				addr = chip.RP[chip.SRCADDRREG];
+				chr = (addr & 0b00001111);
+				r = (addr >> 4) & (0b00000011);
+				c = (addr >> 6) & (0b00000011);
+				b = chip.DATARAMSELECTED;
+				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
 				break;
 			case 233: // 0xE9

@@ -79,13 +79,15 @@ static void addToAccumulator(uint8_t value)
 
 static void subFromAccumulator(uint8_t value)
 {
+	assert(value >= 0 && value < 16);
 	// if carry bit is 1 it means no borrowing
 	// if carry bit is 0 it means borrowed
-	chip.ACCUMULATOR += (~value + ~chip.CARRYBIT);
-	if (value > chip.ACCUMULATOR) chip.CARRYBIT = 0;
+	uint8_t temp = chip.ACCUMULATOR;
+	temp += (~value &0b00001111) + 
+		(~chip.CARRYBIT & 0b00000001);
+	chip.CARRYBIT = 0b0001000 >> 3;
+	chip.ACCUMULATOR = temp;
 }
-
-
 
 static int getDataRAMAddr(uint8_t bank, 
 			 uint8_t chip, uint8_t reg)
@@ -101,8 +103,8 @@ static int getDataRAMStatus(uint8_t bank,
 	return addr * 2;
 }
 
-static void displayRamRegister(uint8_t b, 
-			 uint8_t c, uint8_t r)
+static void displayRamRegister(
+	uint8_t b, uint8_t c, uint8_t r)
 {
 	int baseaddr = getDataRAMAddr(b, c, r);
 	printf("(bank %d:chip %d:reg %d)\n---\n0123456789012345\n",b,c,r);
@@ -194,5 +196,13 @@ static uint8_t getDataRamStatusValue(
 	}
 	return (tempval & 0b00001111);
 }
+
+static uint8_t getDataRamCharacter(
+	uint8_t bnk, uint8_t chp, 
+	uint8_t reg, uint8_t character)
+{
+
+}
+
 
 #endif // CHIP_H
