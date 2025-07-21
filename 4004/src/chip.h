@@ -189,7 +189,6 @@ static uint8_t getDataRamStatusValue(
 	int addr = baseaddr + ( character / 2 );
 	uint8_t tempval = chip.RAMSTATUS[addr];
 
-	int bit = 0;
 	if (character % 2 == 1) 
 	{
 		return (tempval >> 4);
@@ -201,8 +200,16 @@ static uint8_t getDataRamCharacter(
 	uint8_t bnk, uint8_t chp, 
 	uint8_t reg, uint8_t character)
 {
+	assert(bnk >= 0 && bnk < 8);
+	assert(chp >= 0 && reg < 4);
+	assert(chp >= 0 && reg < 4);
+	assert(character >= 0 && character < 16);
 
+	int baseaddr = (( bnk * 16 ) + ( chp * 4 ) + reg) * 4;
+	int addr = baseaddr + ( character / 4 );
+	uint16_t shift = (character % 4) * 4;
+	uint16_t tempval = (chip.RAM[addr] >> shift) & (0xF);
+	return tempval;
 }
-
 
 #endif // CHIP_H

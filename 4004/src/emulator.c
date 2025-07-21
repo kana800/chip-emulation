@@ -273,7 +273,6 @@ int main(int argc, char* argv[])
 			case 142: // 0x8E
 			case 143: // 0x8F
 				opr = hexval & 0b00001111;
-				printf("ADD %d\n", opr);
 				addToAccumulator(chip.RP[opr]);
 				programcounter += 1;
 				break;
@@ -294,7 +293,7 @@ int main(int argc, char* argv[])
 			case 158: // 0x9E
 			case 159: // 0x9F
 				opr = hexval & 0b00001111;
-				printf("SUB %d\n", opr);
+				subFromAccumulator(chip.RP[opr]);
 				programcounter += 1;
 				break;
 			case 160: // 0xA0
@@ -475,7 +474,8 @@ int main(int argc, char* argv[])
 				r = (addr >> 4) & (0b00000011);
 				c = (addr >> 6) & (0b00000011);
 				b = chip.DATARAMSELECTED;
-				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
+				uint16_t val = getDataRamCharacter(b,c,r,chr);
+				subFromAccumulator(val);
 				programcounter += 1;
 				break;
 			case 233: // 0xE9

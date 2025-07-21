@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	// RAM DATA
 	setRamRegisterCharacter(0,0,0,0,0xF);
 	setRamRegisterCharacter(0,0,0,1,0xC);
 	setRamRegisterCharacter(0,0,0,2,0x1);
@@ -37,10 +38,28 @@ int main(int argc, char* argv[])
 	setRamRegisterCharacter(0,0,0,6,0xE);
 	setRamRegisterCharacter(0,0,0,7,1);
 	setRamRegisterCharacter(0,0,0,8,0x0);
+	
 	assert(chip.RAM[0] == 0x11CF);
 	assert(chip.RAM[1] == 0x1E11);
 	assert(chip.RAM[2] == 0x0000);
 	assert(chip.RAM[4] == 0x0000);
+
+	uint16_t temp = 0x0;
+	temp = getDataRamCharacter(0,0,0,0);
+	assert(temp == 0xF);
+	temp = getDataRamCharacter(0,0,0,1);
+	assert(temp == 0xC);
+	temp = getDataRamCharacter(0,0,0,2);
+	assert(temp == 0x1);
+	temp = getDataRamCharacter(0,0,0,3);
+	assert(temp == 0x1);
+	temp = getDataRamCharacter(0,0,0,4);
+	temp = getDataRamCharacter(0,0,0,5);
+	temp = getDataRamCharacter(0,0,0,6);
+	temp = getDataRamCharacter(0,0,0,7);
+	temp = getDataRamCharacter(0,0,0,8);
+
+
 	displayRamRegister(0,0,0);
 
 	// RAM STATUS
