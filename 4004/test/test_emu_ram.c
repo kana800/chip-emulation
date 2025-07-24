@@ -95,4 +95,16 @@ int main(int argc, char* argv[])
 	assert(getDataRamStatusValue(0,0,0,3) == 0xD);
 	assert(getDataRamStatusValue(7,3,3,2) == 0xF);
 	assert(getDataRamStatusValue(4,2,3,1) == 0x0);
+
+
+
+	// STACK
+	printStack();
+	addToStack(2);
+	printStack();
+	assert(chip.stackpointer == 1);
+	assert(getFromStack() == 2);
+	addToStack(3);
+	assert(chip.stackpointer == 1);
+	printStack();
 }

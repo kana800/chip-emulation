@@ -86,9 +86,14 @@ int main(int argc, char* argv[])
 			case 29: // 0x1D
 			case 30: // 0x1E
 			case 31: // 0x1F
-				opr = hexval & 0b00001111;
+				// JCN Jump On Condition
+				opr = hexval & 0b00001111; // condition
+				switch (opr)
+				{
+					case 0b0100:
+				}
 				hexval = chip.ROM[programcounter + 1];
-				printf("JCN %d\n", hexval + opr ); // CN = 15
+//				printf("JCN %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
 				break;
 			case 32: // 0x20
@@ -99,9 +104,10 @@ int main(int argc, char* argv[])
 			case 42: // 0x2A
 			case 44: // 0x2C
 			case 46: // 0x2E
+				// FIM 
 				opr = (hexval >> 1) & 0b00000111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("FIM %dP %d\n", opr, hexval);
+//				printf("FIM %dP %d\n", opr, hexval);
 				addToRegisterPair(opr, hexval);
 				programcounter += 2;
 				break;
@@ -122,7 +128,7 @@ int main(int argc, char* argv[])
 				// 3. RAM OUTPUT PORT
 				// 4. ROM I/O PORT
 				opr = (hexval >> 1) & 0b00000111; 
-				printf("SRC %dP\n", opr);
+//				printf("SRC %dP\n", opr);
 				chip.SRCADDRREG = opr;
 				programcounter += 1;
 				break;
@@ -134,10 +140,11 @@ int main(int argc, char* argv[])
 			case 58: // 0x3A
 			case 60: // 0x3C
 			case 62: // 0x3E
+				// FETCH INDIRECT
 				opr = (hexval >> 1) & 0b00000111; 
 				uint16_t regval =  hexval << 8 | 
 					chip.RP[0] << 4 | chip.RP[1];
-				printf("FIN %dP\n", opr);
+//				printf("FIN %dP\n", opr);
 				chip.RP[opr] = buffer[regval];
 				programcounter += 1;
 				break;
@@ -148,8 +155,11 @@ int main(int argc, char* argv[])
 			case 57: // 0x39
 			case 59: // 0x3B
 			case 61: // 0x3D
+				// JIN Jump Indirect
 				opr = (hexval >> 1) & 0b00000111; 
-				printf("JIN %dP\n", opr);
+				addr = chip.RP[opr]; 
+				hexval = chip.ROM[addr];
+//				printf("JIN %dP\n", opr);
 				programcounter += 1;
 				break;
 			case 63: // 0x3F
@@ -169,9 +179,13 @@ int main(int argc, char* argv[])
 			case 77: // 0x4D
 			case 78: // 0x4E
 			case 79: // 0x4F
+				// JUN Jump Unconditionally
+				// ONLY JUN or JMS instruction should be
+				// able to transfer control from one page
+				// to another
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("JUN %d\n", hexval + opr ); // CN = 15
+//				printf("JUN %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
 				break;
 			case 80: // 0x50
@@ -196,9 +210,9 @@ int main(int argc, char* argv[])
 				// to the addres of the stack
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("JMS %d\n", hexval + opr ); // CN = 15
+//				printf("JMS %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
-				chip.STACK[chip.stackpointer] = programcounter;
+				addToStack(programcounter);
 				programcounter = hexval + opr;
 				break;
 			case 96: // 0x60
@@ -221,7 +235,7 @@ int main(int argc, char* argv[])
 				// Index register indicated by REG
 				// is increment by one;
 				opr = hexval & 0b00001111;
-				printf("INC %d\n", opr);
+//				printf("INC %d\n", opr);
 				assert(15 > opr >= 0);
 				chip.RP[opr] += 1;
 				programcounter += 1;
@@ -253,7 +267,7 @@ int main(int argc, char* argv[])
 				// highest 4 bits remains unchanged.
 				opr = hexval & 0b00001111;
 				hexval = chip.ROM[programcounter + 1];
-				printf("ISZ %dP %d\n", opr, hexval);
+//				printf("ISZ %dP %d\n", opr, hexval);
 				programcounter += 2;
 				break;
 			case 128: // 0x80
@@ -273,6 +287,7 @@ int main(int argc, char* argv[])
 			case 142: // 0x8E
 			case 143: // 0x8F
 				opr = hexval & 0b00001111;
+//				printf("ADD %d\n", opr);
 				addToAccumulator(chip.RP[opr]);
 				programcounter += 1;
 				break;
@@ -366,7 +381,7 @@ int main(int argc, char* argv[])
 				printf("BBL\n");
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = opr;
-				programcounter = chip.STACK[chip.stackpointer];
+				programcounter = getFromStack();
 				break;
 			case 208: // 0xD0
 			case 209: // 0xD1

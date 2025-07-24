@@ -42,22 +42,54 @@ static void resetAccumulator()
 	chip.CARRYBIT = 0;
 }
 
+static void printStack()
+{
+	printf("1 2 3\n%x %x %x <sp:%d>\n",
+		chip.STACK[0],
+		chip.STACK[1],
+		chip.STACK[2],
+		chip.stackpointer + 1
+	);
+}
+
+static void addToStack(uint8_t value)
+{
+	assert(value >= 0 && value < 8);
+	chip.STACK[chip.stackpointer] = value;
+
+	if (chip.stackpointer == 2) 
+	{
+		chip.stackpointer = 0;
+	} else
+	{
+		chip.stackpointer += 1;
+	}
+	return;
+}
+
+static uint8_t getFromStack()
+{
+	chip.stackpointer -= 1;
+	uint8_t temp = chip.STACK[chip.stackpointer];
+	return temp;
+}
+
 static void addToRegisterPair(
 	uint8_t reg, uint8_t value) 
 {
-	assert(8 > reg >= 0);
+	assert(8 > reg && reg >= 0);
 	chip.RP[reg] = value;
 }
 
 static uint8_t getRegisterPairValue(uint8_t reg)
 {
-	assert(8 > reg >= 0);
+	assert(8 > reg && reg >= 0);
 	return chip.RP[reg];
 }
 
 static uint8_t getRegisterValue(uint8_t reg)
 {
-	assert(16 > reg >= 0);
+	assert(16 > reg && reg >= 0);
 	uint8_t rp = reg / 2;
 	// RP 5 [10 | 11] 
 	if (reg % 2 == 0)
