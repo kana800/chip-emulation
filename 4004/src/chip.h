@@ -44,22 +44,24 @@ static void resetAccumulator()
 
 static void printStack()
 {
-	printf("1 2 3\n%x %x %x <sp:%d>\n",
+	printf("1 2 3\n%x %x %x\n",
 		chip.STACK[0],
 		chip.STACK[1],
 		chip.STACK[2],
 		chip.stackpointer + 1
 	);
+	printf("%*s^sp=%d\n",chip.stackpointer*2,"",chip.stackpointer + 1);
 }
 
 static void addToStack(uint8_t value)
 {
-	assert(value >= 0 && value < 8);
+	assert(value >= 0x0 && value < 0x1000);
+
 	chip.STACK[chip.stackpointer] = value;
 
-	if (chip.stackpointer == 2) 
+	if (chip.stackpointer >= 2) 
 	{
-		chip.stackpointer = 0;
+		chip.stackpointer = 2;
 	} else
 	{
 		chip.stackpointer += 1;
@@ -67,10 +69,24 @@ static void addToStack(uint8_t value)
 	return;
 }
 
-static uint8_t getFromStack()
+static uint8_t popFromStack()
 {
-	chip.stackpointer -= 1;
-	uint8_t temp = chip.STACK[chip.stackpointer];
+	uint8_t temp;
+	uint8_t prev = chip.stackpointer;
+
+	if (prev == 2) 
+	{
+		// chip.stackpointer = 2;
+		uint8_t temp = chip.STACK[2];
+		chip.STACK[2] = 0;
+		chip.stackpointer -= 1;
+	}
+	else
+	{
+		chip.stackpointer -= 1;
+		uint8_t temp = chip.STACK[chip.stackpointer];
+		chip.STACK[chip.stackpointer] = 0;
+	}
 	return temp;
 }
 

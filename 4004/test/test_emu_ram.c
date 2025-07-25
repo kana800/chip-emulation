@@ -99,12 +99,20 @@ int main(int argc, char* argv[])
 
 
 	// STACK
-	printStack();
 	addToStack(2);
-	printStack();
 	assert(chip.stackpointer == 1);
-	assert(getFromStack() == 2);
+	printStack();
+	popFromStack();
+	assert(chip.stackpointer == 0);
+	printStack();
+
 	addToStack(3);
 	assert(chip.stackpointer == 1);
+	addToStack(4);
+	assert(chip.stackpointer == 2);
+	addToStack(5);
 	printStack();
+	popFromStack();
+	printStack();
+	assert(chip.stackpointer == 1);
 }
