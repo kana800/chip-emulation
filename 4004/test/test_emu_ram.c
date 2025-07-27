@@ -96,8 +96,6 @@ int main(int argc, char* argv[])
 	assert(getDataRamStatusValue(7,3,3,2) == 0xF);
 	assert(getDataRamStatusValue(4,2,3,1) == 0x0);
 
-
-
 	// STACK
 	addToStack(2);
 	assert(chip.stackpointer == 1);

@@ -131,9 +131,9 @@ static void subFromAccumulator(uint8_t value)
 	// if carry bit is 1 it means no borrowing
 	// if carry bit is 0 it means borrowed
 	uint8_t temp = chip.ACCUMULATOR;
-	temp += (~value &0b00001111) + 
+	temp += (~value & 0b00001111) + 
 		(~chip.CARRYBIT & 0b00000001);
-	chip.CARRYBIT = 0b0001000 >> 3;
+	if ((~value & 0b00001111) > chip.ACCUMULATOR) chip.CARRYBIT = 0;
 	chip.ACCUMULATOR = temp;
 }
 

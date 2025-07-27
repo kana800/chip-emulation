@@ -38,5 +38,11 @@ test_ram: $(TESTDIR)/test_emu_ram.c
 	./$(BUILDDIR)/$@.out
 	echo "test completed"
 
+test_op: $(TESTDIR)/test_opcodes.c
+	$(CC) $^ -g -o $(BUILDDIR)/$@.out
+	echo "running DATA RAM testing..."
+	./$(BUILDDIR)/$@.out
+	echo "test completed"
+
 clean:
 	rm -r out
