@@ -6,6 +6,8 @@
 
 #include "chip.h"
 
+#include <ncurses.h>
+
 int main(int argc, char* argv[])
 {
 	if (argc != 2)
@@ -20,6 +22,16 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "invalid filename '%s' \n", argv[1]);
 		return -1;
 	}
+
+#ifdef DEBUG
+	FILE* dbptr = fopen("db.out","wb");
+	if (dbptr == NULL)
+	{
+		fprintf(stderr, "failed to initiate debug file \n");
+		return -1;
+	}
+#endif
+
 
 	fseek(fptr, 0L, SEEK_END);
 	int len = ftell(fptr);
@@ -58,7 +70,6 @@ int main(int argc, char* argv[])
 	uint16_t programcounter = 0;
 	uint8_t hexval = 0; // hex value of the operand or byteread
 	bool run = true;
-	
 
 	while (run) 
 	{
@@ -107,9 +118,13 @@ int main(int argc, char* argv[])
 				// FIM 
 				opr = (hexval >> 1) & 0b00000111;
 				hexval = chip.ROM[programcounter + 1];
-//				printf("FIM %dP %d\n", opr, hexval);
 				addToRegisterPair(opr, hexval);
 				programcounter += 2;
+#ifdef DEBUG
+				fprintf(dbptr, "FIM %dP %d ", 
+					opr, hexval);
+				printReg_D(dbptr, opr);	
+#endif
 				break;
 			case 33: // 0x21
 			case 35: // 0x23
@@ -381,7 +396,7 @@ int main(int argc, char* argv[])
 				printf("BBL\n");
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = opr;
-				programcounter = getFromStack();
+				programcounter = popFromStack();
 				break;
 			case 208: // 0xD0
 			case 209: // 0xD1
@@ -402,7 +417,7 @@ int main(int argc, char* argv[])
 				// LDM LOAD ACCUMULATOR IMMEDIATE
 				// 4 bits of immediate data are loaded
 				// into the accumulator
-				printf("LDM\n");
+				// printf("LDM\n");
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = opr;
 				programcounter += 1;
@@ -682,7 +697,6 @@ int main(int argc, char* argv[])
 						chip.ACCUMULATOR = 0b1111;
 						break;
 				}
-				programcounter += 1;
 				break;
 			case 253: // 0xFD
 				// DCL DESGINATE COMMAND LINE
@@ -695,5 +709,7 @@ int main(int argc, char* argv[])
 				break;
 		}
 	}
+	
+	endwin();
 	return 0;
 }

@@ -3,7 +3,6 @@
 
 #include "../src/chip.h"
 
-
 void printRegisterPairs()
 {
 	for (int i = 0; i < 16; i += 2)

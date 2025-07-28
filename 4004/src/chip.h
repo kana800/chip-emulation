@@ -2,7 +2,7 @@
 #define CHIP_H
 
 #include <stdint.h>
-#define DEBUG 0 
+#define DEBUG 1 
 
 typedef struct {
 	uint8_t data:4;
@@ -52,6 +52,13 @@ static void printStack()
 	);
 	printf("%*s^sp=%d\n",chip.stackpointer*2,"",chip.stackpointer + 1);
 }
+
+#ifdef DEBUG
+static void printReg_D(FILE* dbptr, uint8_t reg)
+{
+	fprintf(dbptr, "reg %d\n", chip.RP[reg]);
+}
+#endif
 
 static void addToStack(uint8_t value)
 {
