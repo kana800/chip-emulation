@@ -67,9 +67,11 @@ int main(int argc, char* argv[])
 	uint8_t c = 0; // data chip
 	uint8_t b = 0; // bank
 	uint8_t chr = 0; // data character
-	uint16_t programcounter = 0;
 	uint8_t hexval = 0; // hex value of the operand or byteread
 	bool run = true;
+
+	uint16_t programcounter = 0;
+	uint16_t instructioncycles = 0;
 
 	while (run) 
 	{
@@ -106,6 +108,7 @@ int main(int argc, char* argv[])
 				hexval = chip.ROM[programcounter + 1];
 //				printf("JCN %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
+				instructioncycles += 2;
 				break;
 			case 32: // 0x20
 			case 34: // 0x22
@@ -115,7 +118,7 @@ int main(int argc, char* argv[])
 			case 42: // 0x2A
 			case 44: // 0x2C
 			case 46: // 0x2E
-				// FIM 
+				// FIM FETCH IMMEDIATE
 				opr = (hexval >> 1) & 0b00000111;
 				hexval = chip.ROM[programcounter + 1];
 				addToRegisterPair(opr, hexval);
@@ -125,6 +128,7 @@ int main(int argc, char* argv[])
 					opr, hexval);
 				printReg_D(dbptr, opr);	
 #endif
+				instructioncycles += 2;
 				break;
 			case 33: // 0x21
 			case 35: // 0x23
@@ -146,6 +150,7 @@ int main(int argc, char* argv[])
 //				printf("SRC %dP\n", opr);
 				chip.SRCADDRREG = opr;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 48: // 0x30
 			case 50: // 0x32
@@ -162,6 +167,7 @@ int main(int argc, char* argv[])
 //				printf("FIN %dP\n", opr);
 				chip.RP[opr] = buffer[regval];
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 49: // 0x31
 			case 51: // 0x33
@@ -176,6 +182,7 @@ int main(int argc, char* argv[])
 				hexval = chip.ROM[addr];
 //				printf("JIN %dP\n", opr);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 63: // 0x3F
 			case 64: // 0x40
@@ -202,6 +209,7 @@ int main(int argc, char* argv[])
 				hexval = chip.ROM[programcounter + 1];
 //				printf("JUN %d\n", hexval + opr ); // CN = 15
 				programcounter += 2;
+				instructioncycles += 2;
 				break;
 			case 80: // 0x50
 			case 81: // 0x51
@@ -229,6 +237,7 @@ int main(int argc, char* argv[])
 				programcounter += 2;
 				addToStack(programcounter);
 				programcounter = hexval + opr;
+				instructioncycles += 2;
 				break;
 			case 96: // 0x60
 			case 97: // 0x61
@@ -284,6 +293,7 @@ int main(int argc, char* argv[])
 				hexval = chip.ROM[programcounter + 1];
 //				printf("ISZ %dP %d\n", opr, hexval);
 				programcounter += 2;
+				instructioncycles += 2;
 				break;
 			case 128: // 0x80
 			case 129: // 0x81
@@ -305,6 +315,7 @@ int main(int argc, char* argv[])
 //				printf("ADD %d\n", opr);
 				addToAccumulator(chip.RP[opr]);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 144: // 0x90
 			case 145: // 0x91
@@ -325,6 +336,7 @@ int main(int argc, char* argv[])
 				opr = hexval & 0b00001111;
 				subFromAccumulator(chip.RP[opr]);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 160: // 0xA0
 			case 161: // 0xA1
@@ -348,6 +360,7 @@ int main(int argc, char* argv[])
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = chip.RP[opr];
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 176: // 0xB0
 			case 177: // 0xB1
@@ -370,11 +383,12 @@ int main(int argc, char* argv[])
 				// content of register is swapped
 				// with the accumulator
 				opr = hexval & 0b00001111;
-				printf("XCH R%d\n", opr);
+				// printf("XCH R%d\n", opr);
 				accumulator = chip.ACCUMULATOR;
 				chip.ACCUMULATOR = chip.RP[opr];
 				chip.RP[opr] = accumulator;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 192: // 0xC0
 			case 193: // 0xC1
@@ -393,10 +407,11 @@ int main(int argc, char* argv[])
 			case 206: // 0xCE
 			case 207: // 0xCF
 				// BBL branch back and load
-				printf("BBL\n");
+				// printf("BBL\n");
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = opr;
 				programcounter = popFromStack();
+				instructioncycles += 1;
 				break;
 			case 208: // 0xD0
 			case 209: // 0xD1
@@ -421,6 +436,7 @@ int main(int argc, char* argv[])
 				opr = hexval & 0b00001111;
 				chip.ACCUMULATOR = opr;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 224: // 0xE0
 				// WRM WRITE DATA RAM CHARACTER
@@ -438,6 +454,7 @@ int main(int argc, char* argv[])
 				b = chip.DATARAMSELECTED;
 				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 225: // 0xE1
 				// WMP WRITE RAM PORT
@@ -451,6 +468,7 @@ int main(int argc, char* argv[])
 				chip.RAM_OUTPUT[chip.DATARAMSELECTED + r] =
 					chip.ACCUMULATOR;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 226: // 0xE2
 				// WRR WRITE ROM PORT
@@ -461,6 +479,7 @@ int main(int argc, char* argv[])
 				r = (addr >> 4) & 0b00001111;
 				chip.ROM_OUTPUT[r] = chip.ACCUMULATOR;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 227: // 0xE3
 				// WPM WRITE PROGRAM RAM
@@ -468,10 +487,11 @@ int main(int argc, char* argv[])
 				// half byte of program RAM, or read the contents
 				// of a half bytes of program RAM into ROM input
 				// port where it can be accessed by a program
-				printf("WPM\n");
+				// printf("WPM\n");
 				chip.RAM_OUTPUT[chip.DATARAMSELECTED] = 
 					chip.ACCUMULATOR;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 228: // 0xE4
 			case 229: // 0xE5
@@ -493,6 +513,7 @@ int main(int argc, char* argv[])
 				b = chip.DATARAMSELECTED;
 				setRamRegisterCharacter(b, c, r, chr, chip.ACCUMULATOR);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 232: // 0xE8
 				// SBM SUBTRACT DATA FROM MEMORY WITH BORROW
@@ -507,13 +528,14 @@ int main(int argc, char* argv[])
 				uint16_t val = getDataRamCharacter(b,c,r,chr);
 				subFromAccumulator(val);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 233: // 0xE9
 				// RDM READ DATA RAM DATA CHAR
 				// The DATA RAM data character specified
 				// by the last SRC instruction is loaded into
 				// the accumulator.
-				printf("RDM\n");
+				// printf("RDM\n");
 				addr = chip.RP[chip.SRCADDRREG];
 				r = (addr & 0b00001111);
 				c = (addr >> 4) & (0b00000011);
@@ -521,6 +543,7 @@ int main(int argc, char* argv[])
 				idx = getDataRAMAddr(b, c, r);
 				chip.ACCUMULATOR = chip.RAM[idx];
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 234: // 0xEA
 				// RDR READ ROM PORT
@@ -528,6 +551,7 @@ int main(int argc, char* argv[])
 				addr = chip.RP[chip.SRCADDRREG];
 				r = (addr & 0b11110000) >> 4;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 235: // 0xEB
 				// ADM ADD DATA RAM TO ACCUMULATOR WITH CARRY
@@ -541,6 +565,7 @@ int main(int argc, char* argv[])
 				idx = getDataRAMAddr(b, c, r);
 				addToAccumulator(chip.RAM[idx]);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 236: // 0xEC
 			case 237: // 0xED
@@ -555,6 +580,7 @@ int main(int argc, char* argv[])
 				b = chip.DATARAMSELECTED;
 				chip.ACCUMULATOR = getDataRamStatusValue(b, c, r, chr);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 240: // 0xF0
 				// CLB CLEAR BOTH
@@ -563,12 +589,14 @@ int main(int argc, char* argv[])
 				chip.ACCUMULATOR = 0;
 				chip.CARRYBIT = 0;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 241: // 0xF1
 				// CLC CLEAR CARRY
 				// carry bit is set to zero
 				chip.CARRYBIT = 0;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 242: // 0xF2
 				// IAC INCREMENT ACCUMULATOR
@@ -579,6 +607,7 @@ int main(int argc, char* argv[])
 				// if there is no carry.
 				addToAccumulator(0b0001);
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 243: // 0xF3
 				// CMC COMPLEMENT CARRY
@@ -586,6 +615,7 @@ int main(int argc, char* argv[])
 				// if carry bit is one set to zero
 				chip.CARRYBIT = ~chip.CARRYBIT;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 244: // 0xF4
 				// CMA COMPLEMENT ACCUMULATOR
@@ -595,6 +625,7 @@ int main(int argc, char* argv[])
 				// bit not affected
 				chip.ACCUMULATOR |= 0b1111;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 245: // 0xF5
 				// RAL ROTATE ACCUMULATOR LEFT 
@@ -609,6 +640,7 @@ int main(int argc, char* argv[])
 					( chip.ACCUMULATOR << 1 ) | chip.CARRYBIT;
 				chip.CARRYBIT = accumulator;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 246: // 0xF6
 				// RAR ROTATE ACCUMULATOR RIGHT
@@ -619,6 +651,7 @@ int main(int argc, char* argv[])
 					( chip.ACCUMULATOR >> 1 ) | chip.CARRYBIT;
 				chip.CARRYBIT = accumulator;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 247: // 0xF7
 				// TCC TRANSMIT CARRY AND CLEAR
@@ -632,6 +665,7 @@ int main(int argc, char* argv[])
 				}
 				chip.CARRYBIT = 0;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 248: // 0xF8
 				// DAC DECREMENT ACCUMULATOR
@@ -646,6 +680,7 @@ int main(int argc, char* argv[])
 				}
 				chip.ACCUMULATOR += 0b1111;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 249: // 0xF9
 				// TCS TRANSFER CARRY SUBTRACT
@@ -660,12 +695,14 @@ int main(int argc, char* argv[])
 					chip.ACCUMULATOR += 1;
 				}
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 250: // 0xFA
 				// STC SET CARRY
 				// set carry bit to 1
 				chip.CARRYBIT = 1;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 251: // 0xFB
 				// DAA DECIMAL ADJUST ACCUMULATOR
@@ -678,6 +715,7 @@ int main(int argc, char* argv[])
 					addToAccumulator(6);
 				}
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 			case 252: // 0xFC
 				// KBP KEYBOARD PROCESS 
@@ -697,6 +735,7 @@ int main(int argc, char* argv[])
 						chip.ACCUMULATOR = 0b1111;
 						break;
 				}
+				instructioncycles += 1;
 				break;
 			case 253: // 0xFD
 				// DCL DESGINATE COMMAND LINE
@@ -706,6 +745,7 @@ int main(int argc, char* argv[])
 				chip.DATARAMSELECTED = 
 					chip.ACCUMULATOR & 0b0111;
 				programcounter += 1;
+				instructioncycles += 1;
 				break;
 		}
 	}
