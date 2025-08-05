@@ -3,46 +3,66 @@
 
 #define INS_SIZE 56
 
-#include <stdint.h>
-
 const char* instructions[INS_SIZE] = {
-    "ADD", "ADM", 
-    "BBL", 
-    "CLB", "CLC", "CMC", "CMA",
-    "DAA", "DAC", "DCL", 
-    "FIM", "FIN", 
-    "IAC", "INC", "ISZ", 
-    "JCN",  "JIN", "JMS", "JUN", 
-    "KBP", 
-    "LDM", "LD", 
-    "NOP", 
-    "RAL", "RAR", "RD0", "RD1", "RD2","RD3", "RDM", "RDR", 
-    "SBM", "SRC", "STC", "SUB",
-    "TCC", "TCS", 
-    "WR0", "WR1", "WR2", "WR3", "WMP","WPM", "WRM", "WRR", 
-    "XCH"
+    ADC, // add with carry
+    AND, // and (with accumulator)
+    ASL, // arithmetic shift left
+    BCC, // branch on carry clear
+    BCS, // branch on carry set
+    BEQ, // branch on equal (zero set)
+    BIT, // bit test
+    BMI, // branch on minus (negative set)
+    BNE, // branch on not equal (zero clear)
+    BPL, // branch on plus (negative clear)
+    BRK, // break / interrupt
+    BVC, // branch on overflow clear
+    BVS, // branch on overflow set
+    CLC, // clear carry
+    CLD, // clear decimal
+    CLI, // clear interrupt disable
+    CLV, // clear overflow
+    CMP, // compare (with accumulator)
+    CPX, // compare with X
+    CPY, // compare with Y
+    DEC, // decrement
+    DEX, // decrement X
+    DEY, // decrement Y
+    EOR, // exclusive or (with accumulator)
+    INC, // increment
+    INX, // increment X
+    INY, // increment Y
+    JMP, // jump
+    JSR, // jump subroutine
+    LDA, // load accumulator
+    LDX, // load X
+    LDY, // load Y
+    LSR, // logical shift right
+    NOP, // no operation
+    ORA, // or with accumulator
+    PHA, // push accumulator
+    PHP, // push processor status (SR)
+    PLA, // pull accumulator
+    PLP, // pull processor status (SR)
+    ROL, // rotate left
+    ROR, // rotate right
+    RTI, // return from interrupt
+    RTS, // return from subroutine
+    SBC, // subtract with carry
+    SEC, // set carry
+    SED, // set decimal
+    SEI, // set interrupt disable
+    STA, // store accumulator
+    STX, // store X
+    STY, // store Y
+    TAX, // transfer accumulator to X
+    TAY, // transfer accumulator to Y
+    TSX, // transfer stack pointer to X
+    TXA, // transfer X to accumulator
+    TXS, // transfer X to stack pointer
+    TYA // transfer Y to accumulator 
 };
 
 const uint8_t instructions_hex[INS_SIZE] = {
-    0b10000000, 0b11101011, // ADD, ADM
-    0b11000000, // BBL
-    0b11110000, 0b11110001, 0b11110011, 0b11110100, // CLB, CLC, CMC, CMA
-    0b11111011, 0b11111000, 0b11111101, // DAA, DAC, DCL
-    0b00100000, 0b00110000, // FIM**, FIN
-    0b11110010, 0b01100000, 0b01110000, // IAC, INC, ISZ**
-    0b00010000, 0b00110001, 0b01010000, 0b01000000, // JCN**, JIN, JMS**, JUN**
-    0b11111100, // KBP
-    0b11010000, 0b10100000, // LDM, LD
-    0b00000000, // NOP
-    0b11110101, 0b11110110, 0b11101100, 0b11101101, 0b11101110, 0b11101111,
-    0b11101001, 0b11101010,
-    0b11101000, 0b00100001, 0b11111010, 0b10010000,
-    0b11110111, 0b11111001, 
-    0b11100100, 0b11100101, 0b11100110, 0b11100111, 
-    0b11100001, 0b11100011, 0b11100000, 0b11100010,
-    0b10110000
 };
-
-
 
 #endif // INSTRUCTION_H
