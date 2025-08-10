@@ -16,8 +16,6 @@ typedef struct __chip__
 } chip;
 
 
-
-
 // sample
 int opcode_adc();
 
