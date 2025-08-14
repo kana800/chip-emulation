@@ -64,7 +64,4 @@ const char* instructions[INS_SIZE] = {
     "TYA" // transfer Y to accumulator 
 };
 
-const uint8_t instructions_hex[INS_SIZE] = {
-};
-
 #endif // INSTRUCTION_H
