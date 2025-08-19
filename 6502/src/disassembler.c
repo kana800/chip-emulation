@@ -40,18 +40,21 @@ int main(int argc, char* argv[])
 
 	uint8_t opc = 0;
 	uint8_t cycles = 0;
-	uint16_t bytesread = 0;
+	uint8_t bytesread = 0;
 	
 	char hexval[2]; 
 	uint8_t hexval_int;
 
-	for (int i = 0; i < len; i += 3)
+	printf("hex %s\n", buffer);
+
+	uint8_t sizeofbyte = 3;
+	
+	for (int i = 0; i < len;)
 	{
 		memcpy(hexval, buffer + i, 2);
 		hexval_int = strtol(hexval, NULL, 16);
 		const char* instruction = instruction_set[hexval_int];
 		const char address_mode = instruction[4];
-//		assert(strlen(instruction) != 5);
 
 		printf("%s - %d %s %d %c\n", 
 			hexval, hexval_int, 
@@ -60,32 +63,47 @@ int main(int argc, char* argv[])
 		switch (address_mode)
 		{
 			case 'A': //accumulator
+				bytesread = 1;
 				break;
 			case 'a': //absolute
+				bytesread = 3 * sizeofbyte;
 				break;
 			case 'x': //absolute, X-indexed
+				bytesread = 3;
 				break;
 			case 'y': //absolute, Y-indexed
 				break;
 			case '#': //immediate
+				bytesread = 2 * sizeofbyte;
 				break;
 			case 'i': //implied
+				bytesread = 1;
+				// byte length is 1 byte
 				break;
 			case 'n': //indirect
+				bytesread = 3;
 				break;
 			case 'X': //X-indexed, indirect
+				bytesread = 2;
 				break;
 			case 'Y': //indirect, Y-indexed
+				bytesread = 2;
 				break;
 			case 'r': //relative
+				bytesread = 2;
 				break;
 			case 'z': //zeropage
+				bytesread = 2;
 				break;
 			case 'p': //zeropage, X-indexed
+				bytesread = 2;
 				break;
 			case 'g': //zeropage, Y-indexed
+				bytesread = 2;
 				break;
 		}
+
+		i += bytesread;
 
 	}
 	
