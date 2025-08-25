@@ -105,7 +105,9 @@ int main(int argc, char* argv[])
 				bytesread = 1 * sizeofbyte;
 				break;
 			case 'n': //indirect
-				memcpy(fourbyte, buffer + i + 5, 4);
+				memcpy(fourbyte, buffer + i + 6, 2);
+				memcpy(fourbyte + 2, buffer + i + 3, 2);
+				fourbyte[4] = '\0';
 				printf("%s ($%s)\n", instruction, fourbyte);
 				bytesread = 3 * sizeofbyte;
 				break;
