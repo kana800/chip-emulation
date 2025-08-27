@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 	char hexval[3]; 
 	uint8_t hexval_int;
 
-	printf("file input (hex dump): %s\n", buffer);
+//	printf("file input (hex dump): %s\n", buffer);
 
 	uint8_t sizeofbyte = 3;
 	
