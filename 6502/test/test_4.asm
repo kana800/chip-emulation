@@ -1,6 +1,6 @@
 LDA #$01
 CMP #$02
-BNE notequal
+BNE $03
 STA $2222
-notequal:
+BRK
 BRK

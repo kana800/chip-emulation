@@ -1,0 +1,14 @@
+LDX #$00
+LDY #$00
+TXA
+STA $00,Y
+PHA
+INX
+INY
+CPY #$10
+BNE $f5
+PLA
+STA $00,Y
+INY
+CPY #$20
+BNE $f7
