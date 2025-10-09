@@ -2,6 +2,12 @@
 
 #include "../src/chip.h"
 
+void* instructions_func[3] = {
+	opcode_lda,
+	opcode_clc,
+        opcode_test
+};
+
 int main(int argc, char* argv[])
 {
     // testing the zero page memory ranges
@@ -21,5 +27,6 @@ int main(int argc, char* argv[])
         assert ( val == i );
     }
 
+    void (*ptr)(uint8_t, uint8_t) = instructions_func[2];
 
 }

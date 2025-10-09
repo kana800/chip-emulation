@@ -5,8 +5,6 @@
 
 #define INS_SIZE 56
 
-void * instructions_func[56];
-
 const char* instructions[INS_SIZE] = {
     "ADC", // add with carry
     "AND", // and (with accumulator)

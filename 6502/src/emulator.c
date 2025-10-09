@@ -5,8 +5,14 @@
 #include <assert.h>
 
 #include "instructions.h"
+#include "chip.h"
 
 #define MAXSIZE 1024
+
+void* instructions_func[2] = {
+	opcode_lda,
+	opcode_clc
+};
 
 int main(int argc, char* argv[])
 {
@@ -53,6 +59,12 @@ int main(int argc, char* argv[])
 	// NOTE:experimentation
 	static char twobyte[2];
 	static char fourbyte[4];
+
+	// using this variable to help
+	// functions in chip.h to determine
+	// in which addressing mode the opcodes
+	// where called in
+	int addressing_mode = 0;
 
 	for (int i = 0; i < len;)
 	{
@@ -101,6 +113,7 @@ int main(int argc, char* argv[])
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s #$%s\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 1;
 				break;
 			case 'i': //implied
 				printf("%s\n", instruction);
@@ -132,21 +145,23 @@ int main(int argc, char* argv[])
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 2;
 				break;
 			case 'p': //zeropage, X-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,X\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 3;
 				break;
 			case 'g': //zeropage, Y-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,Y\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 4;
 				break;
 		}
 		i += bytesread;
 	}
-
 
 	// add memory to accumulator with carry
 	return 0;

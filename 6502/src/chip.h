@@ -62,14 +62,31 @@ void opcode_clc()
 {
 };
 
-
+// load accumulator with memory
+// STATUS REG 
+//  N Z C I D V
+//  + + - - - -
 void opcode_lda(uint8_t mode, uint8_t opr)
 {
-    assert(addr >= 0 && addr < 256);
-    CHIP.accumulator = chip.RAM[opr];
+    switch (mode)
+    {
+        case 0: // immediate
+        case 1: // zeropage
+        case 2: // zeropage, X
+        case 3: // zeropage, Y
+        case 4: // absolute
+        case 5: // absolute, X
+    }
+    CHIP.accumulator = CHIP.RAM[opr];
+    CHIP.status_register_flags &= 0b11000000;
+    return;
 };
 
 
-
+void opcode_test(uint8_t mode, uint8_t opr)
+{
+    printf("test function %d %d\n", mode, opr);
+    return;
+}
 
 #endif // CHIP_H
