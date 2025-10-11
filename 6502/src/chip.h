@@ -51,6 +51,21 @@ void pushToStack(uint8_t val)
     return;
 };
 
+
+// Addressing Mode: 1 -> A – OPC A
+// Addressing Mode: 2 -> abs – OPC $LLHH
+// Addressing Mode: 3 -> abs,X – OPC $LLHH,X
+// Addressing Mode: 4 -> abs,Y – OPC $LLHH,Y
+// Addressing Mode: 5 -> # – OPC #$BB
+// Addressing Mode: 6 -> impl – OPC
+// Addressing Mode: 7 -> ind – OPC ($LLHH)
+// Addressing Mode: 8 -> X,ind – OPC ($LL,X)
+// Addressing Mode: 9 -> ind,Y – OPC ($LL),Y
+// Addressing Mode: 10 -> rel – OPC $BB
+// Addressing Mode: 11 -> zpg – OPC $LL
+// Addressing Mode: 12 -> zpg,X – OPC $LL,X
+// Addressing Mode: 13 -> zpg,Y – OPC $LL,Y
+
 // add memory to accumulator with carry
 void opcode_adc(uint8_t mode, uint8_t opr)
 {
@@ -66,16 +81,41 @@ void opcode_clc()
 // STATUS REG 
 //  N Z C I D V
 //  + + - - - -
-void opcode_lda(uint8_t mode, uint8_t opr)
+void opcode_lda(uint8_t mode, uint16_t opr)
 {
+    uint8_t data = 0;
+
+    // Addressing Mode: 2 -> abs – OPC $LLHH
+    // Addressing Mode: 3 -> abs,X – OPC $LLHH,X
+    // Addressing Mode: 4 -> abs,Y – OPC $LLHH,Y
+    // Addressing Mode: 5 -> # – OPC #$BB
+    // Addressing Mode: 7 -> ind – OPC ($LLHH)
+    // Addressing Mode: 8 -> X,ind – OPC ($LL,X)
+    // Addressing Mode: 9 -> ind,Y – OPC ($LL),Y
+    // Addressing Mode: 11 -> zpg – OPC $LL
+    // Addressing Mode: 12 -> zpg,X – OPC $LL,X
     switch (mode)
     {
-        case 0: // immediate
-        case 1: // zeropage
-        case 2: // zeropage, X
-        case 3: // zeropage, Y
-        case 4: // absolute
-        case 5: // absolute, X
+        case 5: // immediate | LDA #opr
+            data = CHIP.RAM[opr];
+            break;
+        case 11: // zeropage | LDA opr
+            data = getZeroPage(opr);
+            break;
+        case 12: // zeropage,X | LDA opr, X
+            data = getZeroPage(opr + CHIP.reg_x);
+            break;
+        case 2: // absolute | LDA opr
+            data = chip.RAM[opr];
+            break;
+        case 3: // absolute, X | LDA opr, X
+            data = CHIP.RAM[opr + CHIP.reg_x];
+            break;
+        case 5: // absolute, Y | LDA opr, Y
+            data = CHIP.RAM[opr + CHIP.reg_y];
+            break;
+        case 8: // indirect,X | LDA (opr,X)
+        case 9: // indirect, Y | LDA (opr),Y
     }
     CHIP.accumulator = CHIP.RAM[opr];
     CHIP.status_register_flags &= 0b11000000;

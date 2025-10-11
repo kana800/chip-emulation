@@ -91,6 +91,7 @@ int main(int argc, char* argv[])
 			case 'A': //accumulator
 				printf("%s", instruction);
 				bytesread = 1 * sizeofbyte;
+				addressing_mode = 1;
 				break;
 			case 'a': //absolute
 				memcpy(fourbyte, buffer + i + 6, 2);
@@ -98,26 +99,30 @@ int main(int argc, char* argv[])
 				fourbyte[4] = '\0';
 				printf("%s $%s\n", instruction, fourbyte);
 				bytesread = 3 * sizeofbyte;
+				addressing_mode = 2;
 				break;
 			case 'x': //absolute, X-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,X\n", instruction, twobyte);
 				bytesread = 3 * sizeofbyte;
+				addressing_mode = 3;
 				break;
 			case 'y': //absolute, Y-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,Y\n", instruction, twobyte);
 				bytesread = 3 * sizeofbyte;
+				addressing_mode = 4;
 				break;
 			case '#': //immediate
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s #$%s\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
-				addressing_mode = 1;
+				addressing_mode = 5;
 				break;
 			case 'i': //implied
 				printf("%s\n", instruction);
 				bytesread = 1 * sizeofbyte;
+				addressing_mode = 6;
 				break;
 			case 'n': //indirect
 				memcpy(fourbyte, buffer + i + 6, 2);
@@ -125,39 +130,43 @@ int main(int argc, char* argv[])
 				fourbyte[4] = '\0';
 				printf("%s ($%s)\n", instruction, fourbyte);
 				bytesread = 3 * sizeofbyte;
+				addressing_mode = 7;
 				break;
 			case 'X': //X-indexed, indirect
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s ($%s,X)\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 8;
 				break;
 			case 'Y': //indirect, Y-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s ($%s,Y)\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 9;
 				break;
 			case 'r': //relative
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
+				addressing_mode = 10;
 				break;
 			case 'z': //zeropage
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
-				addressing_mode = 2;
+				addressing_mode = 11;
 				break;
 			case 'p': //zeropage, X-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,X\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
-				addressing_mode = 3;
+				addressing_mode = 12;
 				break;
 			case 'g': //zeropage, Y-indexed
 				memcpy(twobyte, buffer + i + 3, 2);
 				printf("%s $%s,Y\n", instruction, twobyte);
 				bytesread = 2 * sizeofbyte;
-				addressing_mode = 4;
+				addressing_mode = 13;
 				break;
 		}
 		i += bytesread;

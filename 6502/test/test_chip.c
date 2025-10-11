@@ -27,6 +27,6 @@ int main(int argc, char* argv[])
         assert ( val == i );
     }
 
-    void (*ptr)(uint8_t, uint8_t) = instructions_func[2];
+    void (*ptr)(uint8_t, uint16_t) = instructions_func[2];
 
 }
