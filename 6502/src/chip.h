@@ -84,7 +84,6 @@ void opcode_clc()
 void opcode_lda(uint8_t mode, uint16_t opr)
 {
     uint8_t data = 0;
-
     // Addressing Mode: 2 -> abs – OPC $LLHH
     // Addressing Mode: 3 -> abs,X – OPC $LLHH,X
     // Addressing Mode: 4 -> abs,Y – OPC $LLHH,Y
@@ -106,18 +105,19 @@ void opcode_lda(uint8_t mode, uint16_t opr)
             data = getZeroPage(opr + CHIP.reg_x);
             break;
         case 2: // absolute | LDA opr
-            data = chip.RAM[opr];
+            data = CHIP.RAM[opr];
             break;
         case 3: // absolute, X | LDA opr, X
             data = CHIP.RAM[opr + CHIP.reg_x];
             break;
-        case 5: // absolute, Y | LDA opr, Y
+        case 4: // absolute, Y | LDA opr, Y
             data = CHIP.RAM[opr + CHIP.reg_y];
             break;
         case 8: // indirect,X | LDA (opr,X)
         case 9: // indirect, Y | LDA (opr),Y
+            break;
     }
-    CHIP.accumulator = CHIP.RAM[opr];
+    CHIP.accumulator = data;
     CHIP.status_register_flags &= 0b11000000;
     return;
 };

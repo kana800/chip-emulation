@@ -27,6 +27,22 @@ int main(int argc, char* argv[])
         assert ( val == i );
     }
 
-    void (*ptr)(uint8_t, uint16_t) = instructions_func[2];
-
+    // Testing LDA
+    // void opcode_lda(uint8_t mode, uint16_t opr)
+    void (*lda)(uint8_t, uint16_t) = instructions_func[0];
+    setZeroPage(82, 64);
+    // mode: zeropage,X | LDA $80,X
+    CHIP.reg_x = 2;
+    (*lda)(12, 80);
+    assert(CHIP.accumulator == 64);
+    // mode: absolute | LDA opr | LDA $3010
+    CHIP.RAM[3010] = 34;
+    (*lda)(2, 3010);
+    assert(CHIP.accumulator == 34);
+    // mode: absolute, X | LDA opr, X | LDA $3120,X
+    (*lda)(3,3008); // addres should be 3008 + 2 = 3010
+    assert(CHIP.accumulator == 34);
+    // mode: immediate | LDA #opr
+    (*lda)(5,2);
+    assert(CHIP.accumulator == 0);
 }
