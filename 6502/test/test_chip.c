@@ -45,4 +45,18 @@ int main(int argc, char* argv[])
     // mode: immediate | LDA #opr
     (*lda)(5,2);
     assert(CHIP.accumulator == 0);
+
+    CHIP.reg_y = 0x10;
+    setZeroPage(0x70, 0x43);
+    setZeroPage(0x71, 0x35);
+    (*lda)(9,0x70);
+
+    CHIP.reg_x = 0x05;
+    setZeroPage(0x75,0x23);
+    setZeroPage(0x76,0x30);
+    CHIP.RAM[0x3023] = 0xA5;
+    (*lda)(8,0x70);
+    assert(CHIP.accumulator == 0xA5);
+
+
 }

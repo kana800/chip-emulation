@@ -83,7 +83,11 @@ void opcode_clc()
 //  + + - - - -
 void opcode_lda(uint8_t mode, uint16_t opr)
 {
-    uint8_t data = 0;
+    uint8_t data = 0x0;
+    uint8_t b1 = 0x0;
+    uint8_t b2 = 0x0;
+    // lua stands for look up address :)
+    uint16_t lua = 0x0;
     // Addressing Mode: 2 -> abs – OPC $LLHH
     // Addressing Mode: 3 -> abs,X – OPC $LLHH,X
     // Addressing Mode: 4 -> abs,Y – OPC $LLHH,Y
@@ -114,7 +118,16 @@ void opcode_lda(uint8_t mode, uint16_t opr)
             data = CHIP.RAM[opr + CHIP.reg_y];
             break;
         case 8: // indirect,X | LDA (opr,X)
+            b1 = getZeroPage(opr + CHIP.reg_x);
+            b2 = getZeroPage(opr + CHIP.reg_x + 0x1);
+            lua = ((b2 << 8) | b1 );
+            data = CHIP.RAM[lua];
+            break;
         case 9: // indirect, Y | LDA (opr),Y
+            b1 = getZeroPage(opr);
+            b2 = getZeroPage(opr + 0x1);
+            lua = ((b2 << 8) | b1 ) + CHIP.reg_y;
+            data = CHIP.RAM[lua];
             break;
     }
     CHIP.accumulator = data;
