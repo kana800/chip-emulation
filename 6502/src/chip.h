@@ -72,15 +72,10 @@ void opcode_adc(uint8_t mode, uint8_t opr)
 
 };
 
-// clear the carry flag
-void opcode_clc()
-{
-};
-
-// load accumulator with memory
-// STATUS REG 
-//  N Z C I D V
-//  + + - - - -
+//  LDA Load Accumulator with Memory
+//  STATUS REG:
+//      N Z C I D V
+//      + + - - - -
 void opcode_lda(uint8_t mode, uint16_t opr)
 {
     uint8_t data = 0x0;
@@ -135,11 +130,122 @@ void opcode_lda(uint8_t mode, uint16_t opr)
     return;
 };
 
+//  AND Memory With Accumulator
+//  A AND M -> A
+//  STATUS REG:
+//      N Z C I D V
+//      + + - - - -
+void opcode_and(uint8_t mode, uint16_t opr)
+{
+    uint8_t data = 0x0;
+    uint8_t b1 = 0x0;
+    uint8_t b2 = 0x0;
+    // lua stands for look up address :)
+    uint16_t lua = 0x0;
+    // Addressing Mode: 2 -> abs – OPC $LLHH
+    // Addressing Mode: 3 -> abs,X – OPC $LLHH,X
+    // Addressing Mode: 4 -> abs,Y – OPC $LLHH,Y
+    // Addressing Mode: 5 -> # – OPC #$BB
+    // Addressing Mode: 7 -> ind – OPC ($LLHH)
+    // Addressing Mode: 8 -> X,ind – OPC ($LL,X)
+    // Addressing Mode: 9 -> ind,Y – OPC ($LL),Y
+    // Addressing Mode: 11 -> zpg – OPC $LL
+    // Addressing Mode: 12 -> zpg,X – OPC $LL,X
+    switch (mode)
+    {
+        case 5: // immediate | AND #opr
+            data = CHIP.RAM[opr];
+            break;
+        case 11: // zeropage | AND opr
+            data = getZeroPage(opr);
+            break;
+        case 12: // zeropage,X | AND opr, X
+            data = getZeroPage(opr + CHIP.reg_x);
+            break;
+        case 2: // absolute | AND opr
+            data = CHIP.RAM[opr];
+            break;
+        case 3: // absolute, X | AND opr, X
+            data = CHIP.RAM[opr + CHIP.reg_x];
+            break;
+        case 4: // absolute, Y | AND opr, Y
+            data = CHIP.RAM[opr + CHIP.reg_y];
+            break;
+        case 8: // indirect,X | AND (opr,X)
+            b1 = getZeroPage(opr + CHIP.reg_x);
+            b2 = getZeroPage(opr + CHIP.reg_x + 0x1);
+            lua = ((b2 << 8) | b1 );
+            data = CHIP.RAM[lua];
+            break;
+        case 9: // indirect, Y | AND (opr),Y
+            b1 = getZeroPage(opr);
+            b2 = getZeroPage(opr + 0x1);
+            lua = ((b2 << 8) | b1 ) + CHIP.reg_y;
+            data = CHIP.RAM[lua];
+            break;
+    }
+    CHIP.accumulator &= CHIP.RAM[data];
+    CHIP.status_register_flags &= 0b00110000;
+    return;
+};
 
-void opcode_test(uint8_t mode, uint8_t opr)
+//  CLC Clear Carry Flag
+//  STATUS REG
+//      N Z C I D V
+//      - - 0 - - -
+void opcode_clc(uint8_t mode, uint16_t opr)
+{
+    assert(mode == 6);
+    CHIP.status_register_flags &= 0b00110111;
+    return;
+}
+
+// CLD Clear Decimal Mode
+//  STATUS REG
+//      N Z C I D V
+//      - - - - 0 -
+void opcode_cld(uint8_t mode, uint16_t opr)
+{
+    assert(mode == 6);
+    CHIP.status_register_flags &= 0b00111101;
+    return;
+}
+
+// INX Increment Index X by One
+void opcode_inx(uint8_t mode, uint16_t opr)
+{
+    assert(mode == 6);
+    CHIP.reg_x += 1;
+    CHIP.status_register_flags &= 0b00110000;
+    return;
+}
+
+// INY Increment Index Y by One
+void opcode_iny(uint8_t mode, uint16_t opr)
+{
+    assert(mode == 6);
+    CHIP.reg_y += 1;
+    CHIP.status_register_flags &= 0b00110000;
+    return;
+}
+
+void opcode_nop(uint8_t mode, uint16_t opr)
+{
+    return;
+}
+
+// SEC Set Carry Flag
+void opcode_sec(uint8_t mode)
+{
+    CHIP.status_register_flags &= 0b00001000;
+    return;
+}
+
+
+void opcode_test(uint8_t mode, uint16_t opr)
 {
     printf("test function %d %d\n", mode, opr);
     return;
-}
+};
 
 #endif // CHIP_H
