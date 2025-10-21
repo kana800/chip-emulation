@@ -16,6 +16,8 @@ struct chip {
 	uint16_t stack[16];
 	uint16_t sp; // stack pointer
 	uint16_t pc; // program counter
+
+	uint16_t display[64*32];
 };
 
 #endif
