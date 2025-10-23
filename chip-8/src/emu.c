@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
 	uint8_t kk = 0x00;
 	uint8_t x = 0x00;
 	uint8_t y = 0x00;
+	uint8_t n = 0x00;
+	uint8_t lb = 0x00;
 
 	for (int i = 0; i < len; i += 4)
 	{
@@ -70,8 +72,13 @@ int main(int argc, char* argv[])
 				switch (hex_val)
 				{
 					case 0x00E0: // CLS; clear the display
+						printf("CLS\n");
 						break;
 					case 0x00EE: // RET return from subroutine
+						break;
+					default:
+						tempblock = hex_val & 0x0FFF;
+						printf("SYS %04X\n", tempblock);
 						break;
 				}
 				break;
@@ -117,7 +124,7 @@ int main(int argc, char* argv[])
 				tempblock = hex_val & 0x0FFF;
 				x = (tempblock & 0x0F00) >> 8;
 				y = (tempblock & 0x00F0) >> 4;
-				uint8_t lb = tempblock & 0x000F;
+				lb = tempblock & 0x000F;
 				switch (lb)
 				{
 					case 0x0:
@@ -162,6 +169,67 @@ int main(int argc, char* argv[])
 			case 0xB:
 				tempblock = hex_val & 0x0FFF;
 				printf("JP V0,%x\n",tempblock);
+				break;
+			case 0xC:
+				tempblock = hex_val & 0x0FFF;
+				x = (tempblock & 0x00F0) >> 4;
+				kk = tempblock & 0x00FF;
+				printf("RND V%x, %x\n", x, kk);
+				break;
+			case 0xD:
+				tempblock = hex_val & 0x0FFF;
+				x = (tempblock & 0x0F00) >> 8;
+				y = (tempblock & 0x00F0) >> 4;
+				n = (tempblock & 0x000F);
+				printf("DRW V%x, V%x, %x\n", x, y, n);
+				break;
+			case 0xE:
+				tempblock = hex_val & 0x0FFF;
+				lb = tempblock & 0x00FF;
+				x = (tempblock & 0xF00) >> 4;
+				switch (lb)
+				{
+					case 0x9E:
+						printf("SKP V%x\n", x);
+						break;
+					case 0xA1:
+						printf("SKNP V%x\n", x);
+						break;
+				}
+				break;
+			case 0xF:
+				tempblock = hex_val & 0x0FFF;
+				lb = tempblock & 0x00FF;
+				switch (lb)
+				{
+					case 0x07:
+						printf("LD V%x,DT\n", x);
+						break;
+					case 0x0A:
+						printf("LD V%x,K\n", x);
+						break;
+					case 0x15:
+						printf("LD DT,V%x\n", x);
+						break;
+					case 0x18:
+						printf("LD ST,V%x\n", x);
+						break;
+					case 0x1E:
+						printf("ADD I,V%x\n", x);
+						break;
+					case 0x29:
+						printf("LD F,V%x\n", x);
+						break;
+					case 0x33:
+						printf("LD B,V%x\n", x);
+						break;
+					case 0x55:
+						printf("LD [I],V%x\n", x);
+						break;
+					case 0x65:
+						printf("LD V%x,[I]\n", x);
+						break;
+				}
 				break;
 		}
 	}
