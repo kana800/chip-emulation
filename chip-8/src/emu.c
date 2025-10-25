@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 						break;
 					default:
 						tempblock = hex_val & 0x0FFF;
-						printf("SYS %04X\n", tempblock);
+						printf("SYS %03x\n", tempblock);
 						break;
 				}
 				break;
