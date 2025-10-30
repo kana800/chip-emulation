@@ -8,14 +8,35 @@
 
 #define DEBUG
 
-static struct chip chip8;
-
-
-void displayChipRegInfo()
+typedef struct _funcdetails_
 {
-	for (int i = 0; i < 16; i++)
+	void (*func)(uint8_t, uint8_t);
+	uint8_t args[2];
+	uint8_t argcount;
+} funcdetails;
+
+static struct chip CHIP8;
+static funcdetails FUNCMEM[512];
+
+
+void addToFuncMem(
+	int ic, void* func, int ac, uint16_t args)
+{
+	FUNCMEM[ic].func = func;
+	switch (ac)
 	{
-		printf("V[%d]  = %03X\n", i , chip8.V[i]);
+		case 1:
+			FUNCMEM[ic].args[0] = args;
+			FUNCMEM[ic].argcount = 1;
+			break;
+		case 2:
+			FUNCMEM[ic].args[0] = (args & 0x00FF);
+			FUNCMEM[ic].args[1] = (args & 0xFF00) >> 8;
+			FUNCMEM[ic].argcount = 2;
+			break;
+		default:
+			FUNCMEM[ic].argcount = 0;
+			break;
 	}
 }
 
@@ -33,7 +54,7 @@ void updateDisplay(uint8_t sprite)
 	printw("\n");
 }
 
-void clearDisplay()
+void clearDisplay(uint8_t a1, uint8_t a2)
 {
 	return;
 }
@@ -41,28 +62,47 @@ void clearDisplay()
 void loadIndexRegister(uint16_t addr)
 {
 	assert(addr < 4096);
-	chip8.I = addr;
+	CHIP8.I = addr;
 }
 
 void loadDataToRegister(uint8_t reg, uint8_t value)
 {
 	assert(reg < 16);
-	assert(addr < 4096);
-	chip8.V[reg] = addr;
+	assert(value < 4096);
+	printf("exec %d %d\n", reg, value);
+	CHIP8.V[reg] = value;
 }
 
 void addToRegister(uint8_t reg, uint8_t value)
 {
 	assert(reg < 16);
-	assert(addr < 4096);
-	chip8.V[reg] += addr;
+	assert(value < 4096);
+	CHIP8.V[reg] += value;
 }
 
 void subFromRegister(uint8_t reg, uint8_t value)
 {
 	assert(reg < 16);
-	assert(addr < 4096);
-	chip8.V[reg] -= addr;
+	assert(value < 4096);
+	CHIP8.V[reg] -= value;
+}
+
+void bitwiseORRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	CHIP8.V[r1] |= CHIP8.V[r2];
+}
+
+void bitwiseXORRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	CHIP8.V[r1] ^= CHIP8.V[r2];
+}
+
+void bitwiseANDRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	CHIP8.V[r1] &= CHIP8.V[r2];
 }
 
 int main(int argc, char* argv[])
@@ -102,11 +142,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	void (*funcmem[512])();
+//	void (*funcmem[512])();
 
 	// copy the memory into the chip ROM
 	printf("size of the loaded program %ld bytes\n", bytesread_f);
-	memcpy(chip8.memory + 512, buffer, bytesread_f);
+	memcpy(CHIP8.memory + 512, buffer, bytesread_f);
 
 	uint8_t hexval[2];
 	uint16_t hex_val = 0x00;
@@ -120,18 +160,6 @@ int main(int argc, char* argv[])
 	uint8_t n = 0x00;
 	uint8_t lb = 0x00;
 
-//	initscr();
-
-//	updateDisplay(0);
-
-//	for (int i = 0; i < 16; i++)
-//	{
-//		clear();
-//		updateDisplay(i);
-//		refresh();
-//		getch();
-//	}
-
 	int inscount = 0; // keep a record of elements in the funcmem array
 
 	// dis-assembling the rom; i want to do something
@@ -142,13 +170,13 @@ int main(int argc, char* argv[])
 	for (int i = 512; i < (bytesread_f + 512); i += 2)
 	{
 
-		memcpy(hexval, chip8.memory + i, sizeof(uint8_t) * 2);
+		memcpy(hexval, CHIP8.memory + i, sizeof(uint8_t) * 2);
 		hex_val = hexval[0] << 8 | hexval[1];
 		opcode = hexval[0] >> 4;
 #ifdef DEBUG
 		printf("mem[%d] -> %x %x = %x %x = %X opcode %x\n",
-			i, chip8.memory[i], 
-			chip8.memory[i + 1], 
+			i, CHIP8.memory[i], 
+			CHIP8.memory[i + 1], 
 			hexval[0], hexval[1], hex_val, opcode);
 #endif
 		switch (opcode)
@@ -158,6 +186,10 @@ int main(int argc, char* argv[])
 				{
 					case 0x00E0: // CLS; clear the display
 						printf("CLS\n");
+//						FUNCMEM[inscount].func = clearDisplay;
+//						FUNCMEM[inscount].argcount = 0;
+//						inscount++;
+						addToFuncMem(inscount, &clearDisplay, 0, 0);
 						break;
 					case 0x00EE: // RET return from subroutine
 						break;
@@ -170,6 +202,7 @@ int main(int argc, char* argv[])
 			case 0x1:
 				tempblock = hex_val & 0x0FFF;
 				printf("JP %x\n",tempblock);
+				CHIP8.pc = tempblock; 
 				break;
 			case 0x2:
 				tempblock = hex_val & 0x0FFF;
@@ -198,7 +231,10 @@ int main(int argc, char* argv[])
 				x = hexval[0] & 0b00001111;
 				kk = hexval[1];
 				printf("LD V%x, %x\n", x, kk);
-				loadDataToRegister(x, kk);
+				addToFuncMem(inscount, 
+					loadDataToRegister, 
+					2, kk << 8 | x);
+				inscount++;
 				break;
 			case 0x7:
 				tempblock = hex_val & 0x0FFF;
@@ -215,37 +251,37 @@ int main(int argc, char* argv[])
 				{
 					case 0x0:
 						// copies Vy into Vx
-						chip8.V[x] = chip8.V[y];
+						CHIP8.V[x] = CHIP8.V[y];
 						printf("LD V%x,V%x\n",x,y);
 						break;
 					case 0x1:
 						// bit wise OR; Vx = Vx | Vy
-						chip8.V[x] |= chip8.V[y];
+						CHIP8.V[x] |= CHIP8.V[y];
 						printf("OR V%x,V%x\n",x,y);
 						break;
 					case 0x2:
 						// bit wise AND; Vx = Vx & Vy
-						chip8.V[x] &= chip8.V[y];
+						CHIP8.V[x] &= CHIP8.V[y];
 						printf("AND V%x,V%x\n",x,y);
 						break;
 					case 0x3:
 						// bit wise XOR; Vx = Vx ^ Vy
 						printf("XOR V%x,V%x\n",x,y);
-						chip8.V[x] ^= chip8.V[y];
+						CHIP8.V[x] ^= CHIP8.V[y];
 						break;
 					case 0x4:
 						printf("ADD V%x,V%x\n",x,y);
-						temp = chip8.V[x] + chip8.V[y];
-						if (chip8.V[x] > 255) 
-							chip8.V[15] = 0x01;
-						chip8.V[x] = temp;
+						temp = CHIP8.V[x] + CHIP8.V[y];
+						if (CHIP8.V[x] > 255) 
+							CHIP8.V[15] = 0x01;
+						CHIP8.V[x] = temp;
 						break;
 					case 0x5:
 						printf("SUB V%x,V%x\n",x,y);
-						temp = chip8.V[x] + chip8.V[y];
-						if (chip8.V[x] < 0) 
-							chip8.V[15] = 0x01;
-						chip8.V[x] = temp;
+						temp = CHIP8.V[x] + CHIP8.V[y];
+						if (CHIP8.V[x] < 0) 
+							CHIP8.V[15] = 0x01;
+						CHIP8.V[x] = temp;
 						break;
 					case 0x6:
 						printf("SHR V%x,{V%x}\n",x,y);
@@ -334,8 +370,12 @@ int main(int argc, char* argv[])
 				}
 				break;
 		}
-		printf("mem_r\n");
-		displayChipRegInfo();
+	}
+
+	for (int i = 0; i < inscount; i++)
+	{
+		void (*f)(uint8_t, uint8_t) = FUNCMEM[i].func;
+		(*f)(FUNCMEM[i].args[0], FUNCMEM[i].args[1]);
 	}
 
 //	endwin();
