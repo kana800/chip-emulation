@@ -142,7 +142,7 @@ struct chip {
 	uint8_t V[16]; // V Register
 	uint8_t memory[4096]; // Memory
 	
-	uint16_t I; // Address Register
+	uint16_t I; // Index Register
 
 	uint8_t delay_timer;
 	uint8_t sound_timer;

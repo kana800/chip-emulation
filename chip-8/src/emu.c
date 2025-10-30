@@ -8,11 +8,15 @@
 
 #define DEBUG
 
-void printmnemonic(uint16_t hexval)
+static struct chip chip8;
+
+
+void displayChipRegInfo()
 {
-#ifdef DEBUG
-	printf("CLS\n");
-#endif
+	for (int i = 0; i < 16; i++)
+	{
+		printf("V[%d]  = %03X\n", i , chip8.V[i]);
+	}
 }
 
 void updateDisplay(uint8_t sprite)
@@ -32,6 +36,33 @@ void updateDisplay(uint8_t sprite)
 void clearDisplay()
 {
 	return;
+}
+
+void loadIndexRegister(uint16_t addr)
+{
+	assert(addr < 4096);
+	chip8.I = addr;
+}
+
+void loadDataToRegister(uint8_t reg, uint8_t value)
+{
+	assert(reg < 16);
+	assert(addr < 4096);
+	chip8.V[reg] = addr;
+}
+
+void addToRegister(uint8_t reg, uint8_t value)
+{
+	assert(reg < 16);
+	assert(addr < 4096);
+	chip8.V[reg] += addr;
+}
+
+void subFromRegister(uint8_t reg, uint8_t value)
+{
+	assert(reg < 16);
+	assert(addr < 4096);
+	chip8.V[reg] -= addr;
 }
 
 int main(int argc, char* argv[])
@@ -71,7 +102,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	struct chip chip8;
+	void (*funcmem[512])();
 
 	// copy the memory into the chip ROM
 	printf("size of the loaded program %ld bytes\n", bytesread_f);
@@ -82,6 +113,7 @@ int main(int argc, char* argv[])
 	uint8_t opcode = 0x00;
 
 	uint16_t tempblock = 0x00;
+	uint8_t temp = 0x00;
 	uint8_t kk = 0x00;
 	uint8_t x = 0x00;
 	uint8_t y = 0x00;
@@ -100,6 +132,13 @@ int main(int argc, char* argv[])
 //		getch();
 //	}
 
+	int inscount = 0; // keep a record of elements in the funcmem array
+
+	// dis-assembling the rom; i want to do something
+	// experimental, where i make a function array
+	// and the function calls will be pushed to the array
+	// and executed all the once, instead of decoding and
+	// executing
 	for (int i = 512; i < (bytesread_f + 512); i += 2)
 	{
 
@@ -119,7 +158,6 @@ int main(int argc, char* argv[])
 				{
 					case 0x00E0: // CLS; clear the display
 						printf("CLS\n");
-						clearDisplay();
 						break;
 					case 0x00EE: // RET return from subroutine
 						break;
@@ -160,6 +198,7 @@ int main(int argc, char* argv[])
 				x = hexval[0] & 0b00001111;
 				kk = hexval[1];
 				printf("LD V%x, %x\n", x, kk);
+				loadDataToRegister(x, kk);
 				break;
 			case 0x7:
 				tempblock = hex_val & 0x0FFF;
@@ -175,22 +214,38 @@ int main(int argc, char* argv[])
 				switch (lb)
 				{
 					case 0x0:
+						// copies Vy into Vx
+						chip8.V[x] = chip8.V[y];
 						printf("LD V%x,V%x\n",x,y);
 						break;
 					case 0x1:
+						// bit wise OR; Vx = Vx | Vy
+						chip8.V[x] |= chip8.V[y];
 						printf("OR V%x,V%x\n",x,y);
 						break;
 					case 0x2:
+						// bit wise AND; Vx = Vx & Vy
+						chip8.V[x] &= chip8.V[y];
 						printf("AND V%x,V%x\n",x,y);
 						break;
 					case 0x3:
+						// bit wise XOR; Vx = Vx ^ Vy
 						printf("XOR V%x,V%x\n",x,y);
+						chip8.V[x] ^= chip8.V[y];
 						break;
 					case 0x4:
 						printf("ADD V%x,V%x\n",x,y);
+						temp = chip8.V[x] + chip8.V[y];
+						if (chip8.V[x] > 255) 
+							chip8.V[15] = 0x01;
+						chip8.V[x] = temp;
 						break;
 					case 0x5:
 						printf("SUB V%x,V%x\n",x,y);
+						temp = chip8.V[x] + chip8.V[y];
+						if (chip8.V[x] < 0) 
+							chip8.V[15] = 0x01;
+						chip8.V[x] = temp;
 						break;
 					case 0x6:
 						printf("SHR V%x,{V%x}\n",x,y);
@@ -279,6 +334,8 @@ int main(int argc, char* argv[])
 				}
 				break;
 		}
+		printf("mem_r\n");
+		displayChipRegInfo();
 	}
 
 //	endwin();
