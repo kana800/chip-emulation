@@ -17,7 +17,7 @@ typedef struct _funcdetails_
 
 static struct chip CHIP8;
 static funcdetails FUNCMEM[512];
-
+static int INSCOUNT = 0;
 
 void addToFuncMem(
 	int ic, void* func, int ac, uint16_t args)
@@ -38,6 +38,7 @@ void addToFuncMem(
 			FUNCMEM[ic].argcount = 0;
 			break;
 	}
+	INSCOUNT++;
 }
 
 void updateDisplay(uint8_t sprite)
@@ -105,6 +106,29 @@ void bitwiseANDRegister(uint8_t r1, uint8_t r2)
 	CHIP8.V[r1] &= CHIP8.V[r2];
 }
 
+void copyRegisterData(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	CHIP8.V[r1] = CHIP8.V[r2];
+}
+
+void addRegWithCarry(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	uint8_t temp = CHIP8.V[r1] + CHIP8.V[r2];
+	if (CHIP8.V[r1] > 255) 
+		CHIP8.V[15] = 0x01;
+	CHIP8.V[r1] = temp;
+}
+
+void subRegWithCarry(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	if (CHIP8.V[r1] > CHIP8.V[r2])
+		CHIP8.V[15] = 0x01;
+	CHIP8.V[r1] -= CHIP8.V[r2];
+}
+
 int main(int argc, char* argv[])
 {
 
@@ -160,8 +184,6 @@ int main(int argc, char* argv[])
 	uint8_t n = 0x00;
 	uint8_t lb = 0x00;
 
-	int inscount = 0; // keep a record of elements in the funcmem array
-
 	// dis-assembling the rom; i want to do something
 	// experimental, where i make a function array
 	// and the function calls will be pushed to the array
@@ -189,7 +211,9 @@ int main(int argc, char* argv[])
 //						FUNCMEM[inscount].func = clearDisplay;
 //						FUNCMEM[inscount].argcount = 0;
 //						inscount++;
-						addToFuncMem(inscount, &clearDisplay, 0, 0);
+						addToFuncMem(
+							INSCOUNT, 
+							&clearDisplay, 0, 0);
 						break;
 					case 0x00EE: // RET return from subroutine
 						break;
@@ -231,10 +255,9 @@ int main(int argc, char* argv[])
 				x = hexval[0] & 0b00001111;
 				kk = hexval[1];
 				printf("LD V%x, %x\n", x, kk);
-				addToFuncMem(inscount, 
+				addToFuncMem(INSCOUNT, 
 					loadDataToRegister, 
 					2, kk << 8 | x);
-				inscount++;
 				break;
 			case 0x7:
 				tempblock = hex_val & 0x0FFF;
@@ -251,37 +274,37 @@ int main(int argc, char* argv[])
 				{
 					case 0x0:
 						// copies Vy into Vx
-						CHIP8.V[x] = CHIP8.V[y];
 						printf("LD V%x,V%x\n",x,y);
+						addToFuncMem(INSCOUNT,
+							&copyRegisterData, 
+							2, y << 8 | x);
 						break;
 					case 0x1:
 						// bit wise OR; Vx = Vx | Vy
-						CHIP8.V[x] |= CHIP8.V[y];
 						printf("OR V%x,V%x\n",x,y);
+						addToFuncMem(INSCOUNT,
+							&bitwiseORRegister, 
+							2, y << 8 | x);
 						break;
 					case 0x2:
 						// bit wise AND; Vx = Vx & Vy
-						CHIP8.V[x] &= CHIP8.V[y];
 						printf("AND V%x,V%x\n",x,y);
+						addToFuncMem(INSCOUNT,
+							&bitwiseANDRegister, 
+							2, y << 8 | x);
 						break;
 					case 0x3:
 						// bit wise XOR; Vx = Vx ^ Vy
 						printf("XOR V%x,V%x\n",x,y);
-						CHIP8.V[x] ^= CHIP8.V[y];
+						addToFuncMem(INSCOUNT,
+							&bitwiseXORRegister, 
+							2, y << 8 | x);
 						break;
 					case 0x4:
 						printf("ADD V%x,V%x\n",x,y);
-						temp = CHIP8.V[x] + CHIP8.V[y];
-						if (CHIP8.V[x] > 255) 
-							CHIP8.V[15] = 0x01;
-						CHIP8.V[x] = temp;
 						break;
 					case 0x5:
 						printf("SUB V%x,V%x\n",x,y);
-						temp = CHIP8.V[x] + CHIP8.V[y];
-						if (CHIP8.V[x] < 0) 
-							CHIP8.V[15] = 0x01;
-						CHIP8.V[x] = temp;
 						break;
 					case 0x6:
 						printf("SHR V%x,{V%x}\n",x,y);
@@ -372,7 +395,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	for (int i = 0; i < inscount; i++)
+	for (int i = 0; i < INSCOUNT; i++)
 	{
 		void (*f)(uint8_t, uint8_t) = FUNCMEM[i].func;
 		(*f)(FUNCMEM[i].args[0], FUNCMEM[i].args[1]);
