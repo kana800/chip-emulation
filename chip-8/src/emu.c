@@ -60,10 +60,16 @@ void clearDisplay(uint8_t a1, uint8_t a2)
 	return;
 }
 
-void loadIndexRegister(uint16_t addr)
+void loadIndexRegister(uint8_t a1, uint8_t a2)
 {
 	assert(addr < 4096);
 	CHIP8.I = addr;
+}
+
+void jumpToAddr(uint8_t a1, uint8_t a2)
+{
+	assert(addr < 4096);
+	CHIP8.pc = addr + CHIP8.V[0];
 }
 
 void loadDataToRegister(uint8_t reg, uint8_t value)
@@ -127,6 +133,39 @@ void subRegWithCarry(uint8_t r1, uint8_t r2)
 	if (CHIP8.V[r1] > CHIP8.V[r2])
 		CHIP8.V[15] = 0x01;
 	CHIP8.V[r1] -= CHIP8.V[r2];
+}
+
+void shiftLeftRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r < 8);
+	uint8_t temp = CHIP8.V[r1] >> r1;
+	CHIP8.V[r1] = temp;
+}
+
+void shiftRightRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r < 8);
+	uint8_t temp = CHIP8.V[r1] << r2;
+	CHIP8.V[r1] = temp;
+}
+
+void compareRegisters(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16 && r2 < 16);
+	if (CHIP8.V[r1] > CHIP8.V[r2]) return
+		// skip the next instructions
+}
+
+
+void setRandomByte(uint8_t r1, uint8_t r2)
+{
+	// set V[r1] = random byte AND kk
+	// TODO: random byte instead of 0x00
+	CHIP8.V[r1] = 0x00 & r2;
+}
+
+void DrawNByteSprite(uint8_t r1, uint8_t r2)
+{
 }
 
 int main(int argc, char* argv[])
