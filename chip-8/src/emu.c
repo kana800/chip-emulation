@@ -19,6 +19,15 @@ static struct chip CHIP8;
 static funcdetails FUNCMEM[512];
 static int INSCOUNT = 0;
 
+void pushToStack(uint16_t val)
+{
+	CHIP8.stack[CHIP8.sp] = val;
+	CHIP8.sp += 1;
+	return;
+}
+
+void popFromStack() { CHIP8.sp -= 1; }
+
 void addToFuncMem(
 	int ic, void* func, int ac, uint16_t args)
 {
@@ -34,6 +43,11 @@ void addToFuncMem(
 			FUNCMEM[ic].args[1] = (args & 0xFF00) >> 8;
 			FUNCMEM[ic].argcount = 2;
 			break;
+		case 3:
+			FUNCMEM[ic].args[0] = (args >> 8);
+			FUNCMEM[ic].args[1] = (args & 0x00FF);
+			FUNCMEM[ic].argcount = 2;
+			break;
 		default:
 			FUNCMEM[ic].argcount = 0;
 			break;
@@ -41,9 +55,24 @@ void addToFuncMem(
 	INSCOUNT++;
 }
 
-void updateDisplay(uint8_t sprite)
+// Dxyn -> DRW Vx,Vy, nib 
+// Display N-Byte Sprite @ (Vx,Vy) 
+// V[16] = 1; if collisions
+// NOTE: 12 bytes are packed into
+// 16 bytes ( 2 x 8 bytes );
+//	Vx ( 4 bits ) - 8 bytes
+//	Vy ( 4 bits ) - 8 bytes
+//	n  ( 4 bits ) - (1 to 16)
+void updateDisplay(uint8_t r1, uint8_t r2)
 {
-	assert(sprite < 16);
+	uint8_t vx = (r1 & 0b11110000) >> 4;
+	uint8_t vy = (r1 & 0b00001111);
+	uint8_t sprite = r2;
+
+	printf("%x %x %x\n", vx, vy, sprite);
+
+	assert(vx < 16 && vy < 16 && sprite < 16);
+
 	for(int i = 0; i < 64 * 32; i++)
 	{
 		if (i % 64 == 0)
@@ -62,12 +91,13 @@ void clearDisplay(uint8_t a1, uint8_t a2)
 
 void loadIndexRegister(uint8_t a1, uint8_t a2)
 {
-	assert(addr < 4096);
-	CHIP8.I = addr;
+	assert(a1 < 4096);
+	CHIP8.I = a1;
 }
 
 void jumpToAddr(uint8_t a1, uint8_t a2)
 {
+	uint16_t addr = a1 << 8 | a2;
 	assert(addr < 4096);
 	CHIP8.pc = addr + CHIP8.V[0];
 }
@@ -137,25 +167,87 @@ void subRegWithCarry(uint8_t r1, uint8_t r2)
 
 void shiftLeftRegister(uint8_t r1, uint8_t r2)
 {
-	assert(r1 < 16 && r < 8);
+	assert(r1 < 16 && r2 < 8);
 	uint8_t temp = CHIP8.V[r1] >> r1;
 	CHIP8.V[r1] = temp;
 }
 
 void shiftRightRegister(uint8_t r1, uint8_t r2)
 {
-	assert(r1 < 16 && r < 8);
+	assert(r1 < 16 && r2 < 8);
 	uint8_t temp = CHIP8.V[r1] << r2;
 	CHIP8.V[r1] = temp;
 }
 
+// compare registers and skip instructions
+// the two registers are packed
+// into r1 and r2 contains the opcode
+// if r2
+//	- 0x5 -> skip next instruction 
+//	if registers are equal
+//	- 0x9 -> skip next instruction
+//	if register are not equal
 void compareRegisters(uint8_t r1, uint8_t r2)
 {
-	assert(r1 < 16 && r2 < 16);
-	if (CHIP8.V[r1] > CHIP8.V[r2]) return
-		// skip the next instructions
+	uint8_t reg1 = (r1 & 0b11110000) >> 4;
+	uint8_t reg2 = r1 >> 4; 
+
+	assert(reg1 < 16 && reg2 < 16);
+	assert(r2 != 0x5 | r2 != 0x9);
+
+	switch (r2)
+	{
+		case 0x5:
+			if (CHIP8.V[reg1] == CHIP8.V[reg2]) 
+			{
+				CHIP8.pc += 0x02;
+				return;
+			}
+			break;
+		case 0x9:
+			if (CHIP8.V[reg1] != CHIP8.V[reg2]) 
+			{
+				CHIP8.pc += 0x02;
+				return;
+			}
+			break;
+	}
 }
 
+// compare register value with byte provided
+// registers and the opcode are packed ( lower )
+// into r1 and r2 contains the address
+// if r1
+//	- 0x3 -> skip next instruction 
+//	if register == kk
+//	- 0x4 -> skip next instruction
+//	if register != kk
+void compareRegisters(uint8_t r1, uint8_t r2)
+{
+	uint8_t reg1 = (r1 & 0b11110000) >> 4;
+	uint8_t opcode = r1 & 0b00001111;
+
+	assert(reg1 < 16 && reg2 < 16);
+	assert(opcode != 0x3 | r2 != 0x4);
+
+	switch (opcode)
+	{
+		case 0x3:
+			if (CHIP8.V[reg1] == r2) 
+			{
+				CHIP8.pc += 0x02;
+				return;
+			}
+			break;
+		case 0x4:
+			if (CHIP8.V[reg1] != r2) 
+			{
+				CHIP8.pc += 0x02;
+				return;
+			}
+			break;
+	}
+}
 
 void setRandomByte(uint8_t r1, uint8_t r2)
 {
@@ -164,9 +256,68 @@ void setRandomByte(uint8_t r1, uint8_t r2)
 	CHIP8.V[r1] = 0x00 & r2;
 }
 
-void DrawNByteSprite(uint8_t r1, uint8_t r2)
+// NOTE: Call Subroutine at nnn
+// pushes current PC to stack then jumps
+// 2nnn | CALL addr ( addr is 12 bits )
+void callSubroutine(uint8_t r1, uint8_t r2)
 {
+	uint16_t addr = r1 << 8 | r2;
+	pushToStack(addr);
+	CHIP8.pc = addr;
 }
+
+// NOTE: return from subroutine; set the
+// PC to top of the stack and decrement
+// SP
+void returnFromSubroutine(uint8_t r1, uint8_t r2)
+{
+	CHIP8.pc = CHIP8.stack[CHIP8.sp];
+	popFromStack();
+}
+
+void reversedSubstraction(uint8_t r1, uint8_t r2)
+{
+
+}
+
+// get or set the delay timer and sound timer;
+// the mode is configured by arg r2
+// r2:
+//	- r2 0x01 -> set the delay timer
+//	- r2 0x02 -> get the delay timer
+//	- r2 0x03 -> set the sound timer
+// NOTE: "get" as in loading the value to the
+// register mentioned in r1
+void getSetTimers(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16);
+	assert(r2 < 0x05);
+	switch (r2)
+	{
+		case 0x01:
+			CHIP8.delay_timer = CHIP8.V[r1];
+			break;
+		case 0x02:
+			CHIP8.V[r1] = CHIP8.delay_timer;
+			break;
+		case 0x03:
+			CHIP8.sound_timer = CHIP8.V[r1];
+			break;
+	}
+	return;
+}
+
+void addToIndexRegister(uint8_t r1, uint8_t r2)
+{
+	assert(r1 < 16);
+	CHIP8.I += CHIP8.V[r1];
+}
+
+void setFontCharacterAddress(uint8_t r1, uint8_t r2)
+{
+
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -265,10 +416,15 @@ int main(int argc, char* argv[])
 			case 0x1:
 				tempblock = hex_val & 0x0FFF;
 				printf("JP %x\n",tempblock);
-				CHIP8.pc = tempblock; 
+				addToFuncMem(INSCOUNT, 
+					jumpToAddr, 
+					2, tempblock);
 				break;
 			case 0x2:
 				tempblock = hex_val & 0x0FFF;
+				addToFuncMem(INSCOUNT, 
+					callSubroutine, 
+					2, tempblock);
 				printf("CALL %x\n",tempblock);
 				break;
 			case 0x3:
@@ -287,6 +443,9 @@ int main(int argc, char* argv[])
 				tempblock = hex_val & 0x0FFF;
 				x = (tempblock & 0x00F0) >> 4;
 				y = tempblock & 0x000F;
+				addToFuncMem(
+					INSCOUNT, &compareRegisters, 
+					x << 4 | y, 0x9);
 				printf("SE V%x, V%x\n", x, y);
 				break;
 			case 0x6:
@@ -360,6 +519,9 @@ int main(int argc, char* argv[])
 				tempblock = hex_val & 0x0FFF;
 				x = (tempblock & 0x00F0) >> 4;
 				y = tempblock & 0x000F;
+				addToFuncMem(
+					INSCOUNT, &compareRegisters, 
+					x << 4 | y, 0x9);
 				printf("SNE V%x, V%x\n", x, y);
 				break;
 			case 0xA:
@@ -381,6 +543,13 @@ int main(int argc, char* argv[])
 				x = (tempblock & 0x0F00) >> 8;
 				y = (tempblock & 0x00F0) >> 4;
 				n = (tempblock & 0x000F);
+
+				assert( x < 16 && y < 16 && n < 16);
+
+
+				addToFuncMem(INSCOUNT,
+					&updateDisplay, 
+					3,  (x << 4 | y ) << 8 | n);
 				printf("DRW V%x, V%x, %x\n", x, y, n);
 				break;
 			case 0xE:
