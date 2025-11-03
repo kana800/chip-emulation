@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <ncurses.h>
+#include <errno.h>
 
 #include "chip.h"
 
@@ -222,13 +223,13 @@ void compareRegisters(uint8_t r1, uint8_t r2)
 //	if register == kk
 //	- 0x4 -> skip next instruction
 //	if register != kk
-void compareRegisters(uint8_t r1, uint8_t r2)
+void compareRegisterValues(uint8_t r1, uint8_t r2)
 {
 	uint8_t reg1 = (r1 & 0b11110000) >> 4;
 	uint8_t opcode = r1 & 0b00001111;
 
-	assert(reg1 < 16 && reg2 < 16);
-	assert(opcode != 0x3 | r2 != 0x4);
+	assert(reg1 < 16);
+	assert(opcode != 0x3 | opcode != 0x4);
 
 	switch (opcode)
 	{
@@ -313,9 +314,29 @@ void addToIndexRegister(uint8_t r1, uint8_t r2)
 	CHIP8.I += CHIP8.V[r1];
 }
 
+
 void setFontCharacterAddress(uint8_t r1, uint8_t r2)
 {
 
+}
+
+// pause and wait for user input
+// NOTE: user input is a hex value
+void pauseForKeyPress(uint8_t r1, uint8_t r2)
+{
+	char input[3];
+	assert(r1 < 16);
+	// can make this better; need to do 
+	// some checking for the inputs
+	fgets(input, sizeof(input), stdin);
+	errno = 0;
+	uint16_t hex = strtol(input, NULL, 16);
+	assert(errno == EINVAL);
+	// if (errno == EINVAL) {
+        //        exit(EXIT_FAILURE);
+        // }
+	CHIP8.V[r1] = hex;
+	return;
 }
 
 
