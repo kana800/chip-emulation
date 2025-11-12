@@ -438,13 +438,13 @@ int main(int argc, char* argv[])
 				tempblock = hex_val & 0x0FFF;
 				printf("JP %x\n",tempblock);
 				addToFuncMem(INSCOUNT, 
-					jumpToAddr, 
+					&jumpToAddr, 
 					2, tempblock);
 				break;
 			case 0x2:
 				tempblock = hex_val & 0x0FFF;
 				addToFuncMem(INSCOUNT, 
-					callSubroutine, 
+					&callSubroutine, 
 					2, tempblock);
 				printf("CALL %x\n",tempblock);
 				break;
@@ -453,12 +453,18 @@ int main(int argc, char* argv[])
 				x = (tempblock & 0x0F00) >> 8;
 				kk = tempblock & 0x00FF;
 				printf("SE V%x, %x\n", x, kk);
+				addToFuncMem(INSCOUNT, 
+					&compareRegisterValues, 
+					x << 4 | 0x3, kk);
 				break;
 			case 0x4:
 				tempblock = hex_val & 0x0FFF;
 				x = (tempblock & 0x0F00) >> 8;
 				kk = tempblock & 0x00FF;
 				printf("SNE V%x, %x\n", x, kk);
+				addToFuncMem(INSCOUNT, 
+					&compareRegisterValues, 
+					x << 4 | 0x4, kk);
 				break;
 			case 0x5:
 				tempblock = hex_val & 0x0FFF;
